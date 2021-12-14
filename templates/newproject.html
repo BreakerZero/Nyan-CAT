@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block head %}  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/min/dropzone.min.css"> 
+    {{ dropzone.load_css() }}
+    {{ dropzone.style('border: 2px dashed #11111; margin: 10%; min-height: 400px;') }}
+{% endblock %}
+{% block content %}
+<h1 class="title">Nouveau projet</h1>
+<form action="/newproject"  class="dropzone lastelement" id="my-dropzone" method="POST">
+    <input class="button is-primary is-fullwidth" type = "submit" value = "Valider" id="upload-btn">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input is-large" type="text" placeholder="Nom" id="projectname" name="name" required autocomplete="off">
+                <span class="icon is-medium is-left">
+                    <i class="fas fa-user fa-lg is-primary"></i>
+                </span>
+        </div>
+    </div>
+    <div class="field-body">
+        <div class="field is-grouped">
+            <label class="label is-expanded">Type de Projet:</label>
+            <div class="select is-rounded">
+                <select id="type" name="type" autocomplete="off">
+                <option>Roman/Light Novel (Textuel)</option>
+                <option>Manga/BD (Image)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="field-body">
+        <div class="field is-grouped">
+            <label class="label is-expanded">Format du Projet:</label>
+            <div class="select is-rounded">
+                <select id="format" name="format" autocomplete="off">
+                    <option>txt</option>
+                    <option>docx</option>
+                    <option>pdf</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="field-body">
+        <div class="field is-grouped">
+            <label class="label is-expanded">Langue Source:</label>
+            <div class="select is-rounded">
+                <select id="source" name="source" autocomplete="off">
+                    <option>en</option>
+                    <option>ja</option>
+                    <option>fr</option>
+                    <option>es</option>
+                    <option>it</option>
+                </select>
+            </div>
+            <label id="destlang" class="label is-expanded">Langue de Destination:</label>
+            <div class="select is-rounded">
+                <select id="target" name="target" autocomplete="off">
+                    <option>fr</option>
+                    <option>ja</option>
+                    <option>es</option>
+                    <option>it</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div>
+        {{ dropzone.load_js() }}
+        {{ dropzone.config(custom_init='dz = this;document.getElementById("upload-btn").addEventListener("click", function handler(e) {if(document.getElementById("projectname").value != 0 && dz.files.length != 0){dz.processQueue();}});', custom_options='autoProcessQueue: false, addRemoveLinks: true, parallelUploads: 20,') }}
+        <div>{{ dropzone.create('newproject') }}</div>
+    </div>
+    </form>
+    </body>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            dz.options.acceptedFiles = ".txt"
+            $("#format").change(function(){
+            var val = $(this).val();
+            if (val == "txt") {
+            dz.options.acceptedFiles = ".txt";
+            } else if (val == "docx") {
+            dz.options.acceptedFiles = ".docx";
+            } else if (val == "pdf") {
+            dz.options.acceptedFiles = ".pdf";
+            } else if (val == "png") {
+            dz.options.acceptedFiles = ".png";
+            } else if (val == "jpg/jpeg") {
+            dz.options.acceptedFiles = ".jpg,.jpeg";
+            }
+            });
+            $("#type").change(function(){
+            var val = $("#format").val();
+            if (val == "txt") {
+            dz.options.acceptedFiles = ".txt";
+            } else if (val == "docx") {
+            dz.options.acceptedFiles = ".docx";
+            } else if (val == "pdf") {
+            dz.options.acceptedFiles = ".pdf";
+            } else if (val == "png") {
+            dz.options.acceptedFiles = ".png";
+            } else if (val == "jpg/jpeg") {
+            dz.options.acceptedFiles = ".jpg,.jpeg";
+            }
+            });
+            $("#source").change(function(){
+            var val = $(this).val();
+            if (val == "en") {
+            $("#target").html("<option>fr</option><option>ja</option><option>es</option><option>it</option>");
+            } else if (val == "fr") {
+            $("#target").html("<option>en</option><option>ja</option><option>es</option><option>it</option>");
+            } else if (val == "ja") {
+            $("#target").html("<option>fr</option><option>en</option><option>es</option><option>it</option>");
+            } else if (val == "es") {
+            $("#target").html("<option>fr</option><option>ja</option><option>en</option><option>it</option>");
+            } else if (val == "it") {
+            $("#target").html("<option>fr</option><option>ja</option><option>es</option><option>en</option>");
+            }
+            });
+            $("#type").change(function() {
+            var val = $(this).val();
+            if (val == "Roman/Light Novel (Textuel)") {
+            $("#format").html("<option>txt</option><option>docx</option><option>pdf</option>");
+            $("#format").val("txt").change()
+            } else if (val == "Manga/BD (Image)") {
+            $("#format").html("<option>png</option><option>jpg/jpeg</option><option>pdf</option>");
+            $("#format").val("png").change()
+    }
+    });
+        });
+        </script>
+{% endblock %}

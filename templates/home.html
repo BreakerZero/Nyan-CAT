@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Bonjour, {{ pseudo }} !</h1>
+<a href="{{ url_for('newproject') }}" class="button is-fullwidth">Nouveau projet</a>
+<div class="column is-fullwidth is-fullheight is-scrollable">
+  <div class="box">
+    <section class="section cards">
+      <div class="container">
+        <div class="columns is-multiline is-fullheight is-fullwidth is-centered">
+          {% if Projectlist %}
+            {% for tiles in Projectlist %}
+            <div class="column toaster is-narrow">
+              <a href="{{ url_for('project', id = tiles.id ) }}">
+                <span class="icon is-large is-left">
+                  {% if tiles.Extension == "docx" %}
+                  <i class="fas fa-4x fa-file-word inline-flex"></i>
+                  {% elif tiles.Extension == "txt" %}
+                  <i class="fas fa-4x fa-file-alt inline-flex"></i>
+                  {% elif tiles.Extension == "pdf" %}
+                  <i class="fas fa-4x fa-file-pdf inline-flex"></i>
+                  {% else %}
+                  <i class="fas fa-4x fas fa-file-image inline-flex"></i>
+                  {% endif %}
+                </span>
+              <p style="font-size: 1.5em;">{{ tiles.Name }}</p>
+              <p>{{ tiles.Source_Lang }}-{{ tiles.Target_Lang }}</p>
+              <p><progress class="progress is-small is-primary" value = "{{ tiles.Advancement }}" max = "100"></p>
+            </a>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        </div>
+      </div>
+      </section>
+  </div>
+</div>
+{% endblock %}

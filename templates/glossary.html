@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-12 is-offset-0">
+    <div class="box">
+        <h1 class="title">Nouvelle entrée du glossaire:</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification">
+                <span class="icon is-medium is-left">
+                    <i class="fas fa-info-circle is-primary"></i>
+                  </span>
+                <span>{{ messages[0] }}</span>
+            </div>
+        {% endif %}
+        {% endwith %}
+            <form action="/glossary" method="POST">
+                <div class="field is-horizontal">
+                    <div class="field-body">
+                      <div class="field">
+                        <p class="control">
+                            <input type="text" name="Source_Lang" placeholder="Langue Source" class="input" required autocomplete="off">
+                        </p>
+                      </div>
+                    </div>
+                    <div class="field-body">
+                      <div class="field">
+                        <p class="control">
+                            <input type="text" name="Target_Lang" placeholder="Langue Destination" class="input" required autocomplete="off">
+                        </p>
+                      </div>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                        <p class="control">
+                            <input type="text" name="Source" placeholder="Texte Source" class="input" required autocomplete="off">
+                        </p>
+                        </div>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                        <p class="control">
+                            <input type="text" name="Target" placeholder="Texte Cible" class="input" required autocomplete="off">
+                        </p>
+                        </div>
+                    </div>
+                    <div class="field is-grouped is-grouped-centered is-horizontal">
+                        <p class="control">
+                            <input class="button is-block is-info" type="submit" value="Ajouter">
+                        </p>
+                    </div>
+                </div>
+            </form>
+    </div>
+</div>
+    <table id="Glo" class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth lastelement">
+        <thead>
+            <tr>
+              <th>Langue Source</th>
+              <th>Langue Destination</th>
+              <th>Texte Source</th>
+              <th>Texte Destination</th>
+              <th>Suppression</th>
+              <th>Modification</th>
+            </tr>
+          </thead>
+        {% if EditGlossary %}
+            {% for line in EditGlossary %}
+                <tr>
+                    <td>{{ line.Source_Lang }}</td>
+                    <td>{{ line.Target_Lang}}</td>
+                    <td>{{ line.Source }}</td>
+		            <td>{{ line.Target }}</td>
+                    <td><a href="/glossary/delete/{{line.id}}">Supprimer</a></td>
+                    <td><a href="/glossary/update/{{line.id}}">Modifier</a>
+                </tr>
+            {% endfor %}
+        {% endif %}
+    </table>
+</main>
+{% endblock %}

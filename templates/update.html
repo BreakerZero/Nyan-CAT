@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Modifier le glossaire</h1>
+    <div class="column is-8 is-offset-2">
+                    <div class="box">
+                      {% with messages = get_flashed_messages() %}
+                      {% if messages %}
+                          <div class="notification">
+                              {{ messages[0] }}
+                          </div>
+                      {% endif %}
+                      {% endwith %}
+                        <form method="POST" action="/glossary/update/{{Glossary_to_Update.id}}">
+                            <div class="field is-horizontal">
+                                <div class="field-body">
+                                  <div class="field">
+                                    <p class="control">
+                                        <input type="text" name="Source_Lang" placeholder="Langue Source" class="input" required autocomplete="off">
+                                    </p>
+                                  </div>
+                                </div>
+                                <div class="field-body">
+                                  <div class="field">
+                                    <p class="control">
+                                        <input type="text" name="Target_Lang" placeholder="Langue Destination" class="input" required autocomplete="off">
+                                    </p>
+                                  </div>
+                                </div>
+                                <div class="field-body">
+                                    <div class="field">
+                                    <p class="control">
+                                        <input type="text" name="Source" placeholder="Texte Source" class="input" required autocomplete="off">
+                                    </p>
+                                    </div>
+                                </div>
+                                <div class="field-body">
+                                    <div class="field">
+                                    <p class="control">
+                                        <input type="text" name="Target" placeholder="Texte Cible" class="input" required autocomplete="off">
+                                    </p>
+                                    </div>
+                                </div>
+                                <div class="field is-grouped is-grouped-centered is-horizontal">
+                                    <p class="control">
+                                        <input class="button is-block is-info" type="submit" value="Ajouter">
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+{% endblock %}

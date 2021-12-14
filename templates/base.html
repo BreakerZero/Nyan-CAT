@@ -1,0 +1,99 @@
+    <!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nyan-CAT</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    {% block head %}
+    {% endblock %} 
+</head>
+
+<body style="overflow: hidden;">
+    <section class="hero is-primary is-fullheight">
+        <div class="hero-head">
+            <nav class="navbar">
+                <div class="container">
+                    <div class="navbar-burger burger" onclick="document.querySelector('.navbar-menu').classList.toggle('is-active');">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div id="navbarMenuHeroA" class="navbar-menu">
+                        <div class="navbar-end">
+                            <a href="{{ url_for('index') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-home is-primary"></i>
+                                </span>
+                                <span>Accueil</span>
+                            </a>
+                            <a href="{{ url_for('home') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-user is-primary"></i>
+                                </span>
+                                <span>Profil</span>
+                            </a>
+                            {% if not current_user.is_authenticated %}
+                            <a href="{{ url_for('login') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-sign-in-alt is-primary"></i>
+                                </span>
+                                <span>Connexion</span>
+                            </a>
+                            {% endif %}
+                            {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('logout') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-sign-out-alt is-primary"></i>
+                                </span>
+                                <span>Déconnexion</span>
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('glossary') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-book-open is-primary"></i>
+                                </span>
+                                <span>Glossaire</span>
+                            </a>
+                            <a href="{{ url_for('settings') }}" class="navbar-item">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-cogs is-primary"></i>
+                                </span>
+                                <span>Paramètres</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="hero-body">
+            <div class="container has-text-centered">
+               {% block content %}
+               {% endblock %}
+            </div>
+        </div> 
+    </section>
+</body>
+<footer>
+    <div>
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+        <defs>
+        <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+        </defs>
+        <g class="parallax">
+        <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
+        <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+        <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+        <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
+        </g>
+        </svg>
+    </div>
+</footer> 
+
+</html>

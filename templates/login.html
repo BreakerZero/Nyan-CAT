@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Connexion</h1>
+    <div class="column is-8 is-offset-2">
+                    <div class="box">
+                      {% with messages = get_flashed_messages() %}
+                      {% if messages %}
+                          <div class="notification">
+                              {{ messages[0] }}
+                          </div>
+                      {% endif %}
+                      {% endwith %}
+                        <form method="POST" action="/login">
+                            <div class="field">
+                              <div class="control has-icons-left">
+                                <input class="input is-large" type="text" placeholder="Pseudo" name="pseudo" required autocomplete="off">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-user fa-lg is-primary"></i>
+                                </span>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                              <div class="control has-icons-left">
+                                <input class="input is-large" type="password" name="password" placeholder="Mot de Passe" required autocomplete="off">
+                                <span class="icon is-medium is-left">
+                                  <i class="fas fa-lock fa-lg is-primary"></i>
+                                </span>
+                            </div>
+                            <div class="field">
+                                <label class="checkbox">Se souvenir de moi
+                                    <input type="checkbox" id="cbx" style="display:none"/>
+                                <label for="cbx" class="toggle"><span></span></label> 
+                                </label>
+                            </div>
+                            <button class="button is-block is-info is-large is-fullwidth">Connexion</button>
+                        </form>
+                    </div>
+                </div>
+    <p>Pas encore inscrit(e) ?</p>
+    <a href="{{ url_for('signup') }}" class="button" class="lastelement">Inscription</a>
+{% endblock %}
