@@ -10,12 +10,12 @@
 <div class="columns is-multiline is-mobile lastelement">
     <div class="column is-half">
         <div class="control">
-            <h2 class="title is-4">Texte Original</h3>
+            <h2 class="title is-4">Texte Original</h2>
         </div>
     </div>
     <div class="column is-half">
         <div class="control">
-            <h2 class="title is-4">Texte Traduit</h3>
+            <h2 class="title is-4">Texte Traduit</h2>
         </div>
     </div>
     <div class="column is-half">
@@ -127,8 +127,8 @@ function autocompletescript(event){
             htmltoshow.style.fontStyle = "normal"
             if (qleditor.children[lastsection -1].children[lenghtofstyle-1] != null)
             {
-                htmltoshow.style.fontStyle = window.getComputedStyle(qleditor.children[lastsection -1].children[lenghtofstyle-1]).fontStyle;
-                htmltoshow.style.color = window.getComputedStyle(qleditor.children[lastsection -1].children[lenghtofstyle-1]).color;
+                htmltoshow.style.fontStyle = window.getComputedStyle(lastrecurelement(qleditor)).fontStyle;
+                htmltoshow.style.color = window.getComputedStyle(lastrecurelement(qleditor)).color;
             }
             if(!leftpos && toppos){
                 if(parseInt(htmltoshow.style.left) <= parseInt(caret.left) + 0.5)
@@ -144,9 +144,9 @@ function autocompletescript(event){
             }
             else
             {
-                htmltoshow.style.left = caret.left +0.5 + "px";
+                htmltoshow.style.left = caret.left + 0.5 + "px";
             }
-            htmltoshow.style.top = caret.top -2.5 + "px";
+            htmltoshow.style.top = caret.top - 2.5 + "px";
             if(parseInt(htmltoshow.style.left) + parseInt(window.getComputedStyle(htmltoshow).width) >= (document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().right - parseInt(window.getComputedStyle(document.getElementsByClassName("ql-editor")[0], null).paddingLeft)*2))
             {
                 htmltoshow.style.display = "none";
@@ -213,15 +213,18 @@ function clear(event)
         break;
       case 9:
           if(!htmltoshow.textContent == "" || htmltoshow.style.display == "none"){
-        lastrecurelement(qleditor).insertAdjacentHTML('beforeend', htmltoshow.textContent);
-        htmltoshow.textContent = "";
-        var range = document.createRange()
-        var sel = window.getSelection()
-        var len = lastrecurelement(qleditor).childNodes.length
-        range.setStart(lastrecurelement(qleditor).childNodes[len-1], 1)
-        range.collapse(true)
-        sel.removeAllRanges()
-        sel.addRange(range)
+              if (qleditor.lastChild.innerHTML[qleditor.lastChild.innerHTML.length-1] === "\t"){
+                    qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1)
+              }
+                lastrecurelement(qleditor).insertAdjacentHTML('beforeend', htmltoshow.textContent);
+                htmltoshow.textContent = "";
+                var range = document.createRange()
+                var sel = window.getSelection()
+                var len = lastrecurelement(qleditor).childNodes.length
+                range.setStart(lastrecurelement(qleditor).childNodes[len-1], 1)
+                range.collapse(true)
+                sel.removeAllRanges()
+                sel.addRange(range)
           }
         break;
       case 13:
@@ -236,18 +239,23 @@ function clear(event)
 }
 function lastrecurelement(t)
 {
-    while (t != null)
+    if (t.lastChild.lastChild == t.lastChild.lastElementChild)
     {
-    j = t.lastElementChild;
-    if(j==null)
-    {
-        return t;
-        break;
+        while(t != null)
+        {
+            j = t.lastElementChild;
+            if (j == null)
+            {
+                return t;
+                break;
+            } else
+            {
+                t = t.lastElementChild
+            }
+        }
     }
-    else
-    {
-        t = t.lastElementChild
-    }
+    else {
+        return t.lastElementChild
     }
 }
 </script>
