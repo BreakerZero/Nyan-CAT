@@ -1,5 +1,8 @@
+import json
 from operator import truediv
 import os
+import docx
+from converterAPI import ConverterAPI
 from enum import unique
 from re import template
 from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort, Blueprint, \
@@ -14,6 +17,7 @@ from werkzeug.utils import redirect, secure_filename
 from translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
+import html2text
 
 app = Flask(__name__)
 app.config['DROPZONE_REDIRECT_VIEW'] = "home"
@@ -36,6 +40,12 @@ login_manager = LoginManager()
 login_manager.login_view = '/login'
 login_manager.init_app(app)
 dropzone = Dropzone(app)
+ConvAPI = ConverterAPI()
+
+popfile = open("database/pop_french.txt", 'r', encoding="utf-8")
+popword = [line.split('\n') for line in popfile.readlines()]
+globalfile = open("database/french.txt", 'r', encoding="utf-8")
+word = [line.split('\n') for line in globalfile.readlines()]
 
 
 @app.errorhandler(413)
@@ -63,6 +73,11 @@ class User(UserMixin, db.Model):  # Modèle utilisateur
     Mail = db.Column(db.Text, nullable=False, unique=True)
     Password = db.Column(db.Text, nullable=False)
     Status = db.Column(db.Integer)
+    Translator = db.Column(db.Text, nullable=False)
+    TranslatorProvider = db.Column(db.Text, nullable=False)
+    Formality = db.Column(db.Text)
+    ApiKey = db.Column(db.Text, nullable=False)
+
 
 
 class Project(db.Model):  # Modèle projet
@@ -73,8 +88,9 @@ class Project(db.Model):  # Modèle projet
     Extension = db.Column(db.Text, nullable=False)
     Source_Lang = db.Column(db.Text, nullable=False)
     Target_Lang = db.Column(db.Text, nullable=False)
-    Advancement = db.Column(db.Text, nullable=False)
-    Last_Block = db.Column(db.Text, nullable=False)
+    Advancement = db.Column(db.Integer, nullable=False)
+    Last_Block = db.Column(db.Integer, nullable=False)
+    Last_Previous_Block = db.Column(db.Integer, nullable=False)
 
 
 def Glos():  # fonction formatage glossaire
@@ -104,12 +120,8 @@ def index():
 @login_required
 def autocomplete():
     toshearch = request.json["begin"]
-    popfile = open("database/pop_french.txt", 'r', encoding="utf-8")
-    popword = [line.split('\n') for line in popfile.readlines()]
     matching = [i for i in popword if i[0].startswith(toshearch)]
     if len(matching) == 0:
-        globalfile = open("database/french.txt", 'r', encoding="utf-8")
-        word = [line.split('\n') for line in globalfile.readlines()]
         matching = [i for i in word if i[0].startswith(toshearch)]
 
     try:
@@ -282,7 +294,7 @@ def newproject():
                 abort(400)
             up_file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + idproject, up_file.filename))
         new_project = Project(id=int(idproject), Name=name, Type=type, Owner=current_owner, Extension=format,
-                              Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=1)
+                              Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0)
         db.session.add(new_project)
         db.session.commit()
         return redirect('/home')
@@ -299,7 +311,6 @@ def project(id):
             extension = str(Project.query.filter_by(id=id).first().Extension)
             last = str(Project.query.filter_by(id=id).first().Last_Block)
             files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-            print(files[0])
             if type == "Roman/Light Novel (Textuel)":
                 if extension == "docx":
                     return render_template('docxproject.html', id=id, last=last)
@@ -317,12 +328,51 @@ def project(id):
         if request.method == "POST":
             type = str(Project.query.filter_by(id=id).first().Type)
             extension = str(Project.query.filter_by(id=id).first().Extension)
+            source = str(Project.query.filter_by(id=id).first().Source_Lang)
+            target = str(Project.query.filter_by(id=id).first().Target_Lang)
+            translatorsettings = str(User.query.filter_by(id=flask_login.current_user.id).first().Translator)
+            translatorprovidersettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorProvider)
+            formality = str(User.query.filter_by(id=flask_login.current_user.id).first().Formality)
+            apikey = str(User.query.filter_by(id=flask_login.current_user.id).first().ApiKey)
             if type == "Roman/Light Novel (Textuel)":
                 if extension == "docx":
-                    print(request.data)
-                    r = Response(response="<i>TEST OK</i>", status=200, mimetype="text/plain")
-                    r.headers["Content-Type"] = "text/plain; charset=utf-8"
-                    return r
+                    files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
+                    namefile = str(files[0])
+                    if "ressource" in request.json:
+                        idblock = int(request.json["ressource"])
+                        OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
+                        Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
+                        return jsonify({"result": Html})
+                    elif "translated" in request.json:
+                        idblock = int(request.json["translated"])
+                        idpreviousblock = request.json["previoustranslated"]
+                        OriginalHtml = str(request.json["originaltext"])
+                        TranslatedHtml = str(request.json["translatedtext"])
+                        if TranslatedHtml == "<p><br></p>":
+                            TranslatedHtml = "<p></p>"
+                        if len(files) == 1:
+                            TranslatedDocx = docx.Document()
+                            SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
+                            TranslatedDocx.save(SaveName)
+                        SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
+                        TranslatedDocx = docx.Document(SaveName)
+                        text = html2text.html2text(TranslatedHtml)
+                        if idblock < len(TranslatedDocx.paragraphs):
+                            if TranslatedDocx.paragraphs[idblock].text != text:
+                                if idpreviousblock is not None:
+                                    ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
+                                Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                            else:
+                                Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                        else:
+                            text = html2text.html2text(OriginalHtml)
+                            translation = TranslatorAPI.translate(translator, translatorprovidersettings, apikey, source, target, formality, text, formatedGlossary)
+                            Html = '<p>' + translation + "</p>"
+                            ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
+                        Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
+                        Project.query.filter_by(id=id).first().Last_Block = idblock
+                        db.session.commit()
+                        return jsonify({"result": Html})
                 if extension == "txt":
                     return "txt"
                 if extension == "pdf":
@@ -339,4 +389,9 @@ def project(id):
         return redirect('/')
 
 
-app.run(host="127.0.0.1")
+app.run(host="127.0.0.1", port=5000, threaded=True)
+
+#to do:
+#Création page paramètre : keepstyle, provider, api, présence du traducteur, formalité, autocomplete
+#Voir si un moyen existe pour gérer un très grand nombre de requete d'écriture sur un même fichier (non dérangeant)
+#https://blog.miguelgrinberg.com/post/using-celery-with-flask

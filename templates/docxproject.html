@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block head %}
-<link href="//cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-<script src="//cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script src="{{ url_for('static', filename='js/caret.js') }}" type="application/javascript"></script>
+    <link href="//cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <script src="//cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <script src="{{ url_for('static', filename='js/caret.js') }}" type="application/javascript"></script>
+    <script src="{{ url_for('static', filename='js/controlInput.js') }}" type="application/javascript"></script>
 {% endblock %}
 {% block content %}
 <form action="/project/{{id}}" method="POST">
@@ -33,7 +34,7 @@
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Actuel</label>
-            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="7"></textarea>
+            <div id="disablededitorjs" oninput="autocompletescript(event)" onkeypress="clear(event)"></div>
         </div>
     </div>
     <div class="column is-half">
@@ -55,208 +56,57 @@
         </div>
     </div>
     <div class="control as-centered sectionpage">
-        <a class="button"><</a>
-        <input class="input" id="sectionnumber" type="text" autocomplete="off">
-        <a class="button">></a>
+        <a class="button" onclick="downsectionnumber()"><</a>
+        <input class="input" id="sectionnumber" type="text" autocomplete="off" value="{{ last }}" oninput="parseInt(getRessourceProject(document.getElementById('sectionnumber').value))">
+        <a class="button" onclick="upsectionnumber()">></a>
     </div>
 </div>
 </form>
+
+<script src="{{ url_for('static', filename='js/inputFilter.js') }}" type="application/javascript"></script>
+<script src="{{ url_for('static', filename='js/createEditor.js') }}" type="application/javascript"></script>
+<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>
 <script>
-var toolbarOptions = [
-  ['bold', 'italic', 'underline', 'strike', 'clean'],
-  [{ 'header': [1, 2, 3, 4, 5, 6, false] }],      // toggled buttons
-  [{ 'indent': '-1'}, { 'indent': '+1' }],         // outdent/indent
-  [{ 'color': [] }],          // dropdown with defaults from theme
-  [{ 'align': [] }],
-];
-var quill = new Quill('#editorjs', {
-  modules: {
-    toolbar: toolbarOptions
-  },
-  theme: 'snow'
-});
+var previousidblock = null
+function getRessourceProject(block){
+    var url = "/project/{{id}}";
+    var ressourcerequest = new XMLHttpRequest();
+    ressourcerequest.open("POST", url, true);
+    ressourcerequest.setRequestHeader("Content-Type", "application/json");
+    var translatedrequest = new XMLHttpRequest();
+    translatedrequest.open("POST", url, true);
+    translatedrequest.setRequestHeader("Content-Type", "application/json");
+        translatedrequest.onreadystatechange = function ()
+    {
+        if (translatedrequest.readyState === 4 && translatedrequest.status === 200)
+        {
+            previousidblock = block
+            var json = JSON.parse(translatedrequest.responseText);
+            var htmlblock = json.result;
+            document.getElementsByClassName("ql-editor")[1].innerHTML = htmlblock
+            document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres
+
+        }
+    };
+    ressourcerequest.onreadystatechange = function ()
+    {
+        if (ressourcerequest.readyState === 4 && ressourcerequest.status === 200)
+        {
+            var json = JSON.parse(ressourcerequest.responseText);
+            var htmlblock = json.result;
+            document.getElementsByClassName("ql-editor")[0].innerHTML = htmlblock
+            var transtateddata = JSON.stringify({"translated": block , "previoustranslated": previousidblock,  "originaltext" : document.getElementsByClassName("ql-editor")[0].innerHTML, "translatedtext" : document.getElementsByClassName("ql-editor")[1].innerHTML });
+            translatedrequest.send(transtateddata);
+        }
+    };
+    var resourcedata = JSON.stringify({"ressource": block});
+    ressourcerequest.send(resourcedata);
+    document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres
+    htmltoshow.textContent = ""
+    }
 </script>
 <script>
-htmltoshow = document.createElement('span')
-htmltoshow.style.opacity = 0.4;
-htmltoshow.style.userSelect = "none"; 
-htmltoshow.style.lineHeight = 1.42;
-htmltoshow.style.left = 0;
-histcarettop = 0;
-histcaretleft = 0;
-function autocompletescript(event){
-    lastsection = document.getElementsByClassName("ql-editor")[0].children.length;
-    wordinsection = document.getElementsByClassName("ql-editor")[0].children[lastsection -1].textContent.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; });
-    l= document.getElementsByClassName("ql-editor")[0].children[lastsection -1].textContent.length;
-    lastcar=document.getElementsByClassName("ql-editor")[0].children[lastsection -1].textContent[l-1];
-    lenghtofstyle = document.getElementsByClassName("ql-editor")[0].children[lastsection -1].children.length
-    var text = document.getElementsByClassName("ql-editor")[0].children[lastsection -1].childNodes[0];
-    var range = document.createRange();
-    range.selectNode(text);
-    var rect = range.getBoundingClientRect();
-    leftpos = Math.round(getCaretTopPoint().left) >= Math.round(document.getElementsByClassName("ql-editor")[0].children[lastsection -1].getBoundingClientRect().left + rect.width);
-    toppos = Math.round(getCaretTopPoint().top + (document.body.getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().top) + parseInt(window.getComputedStyle(document.getElementsByClassName("ql-editor")[0].children[lastsection -1]).lineHeight, 10))>=Math.round(-(document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[0].children[lastsection-1].getBoundingClientRect().bottom));
-    if (leftpos && toppos || !leftpos && toppos)
-    {
-        if ( wordinsection[wordinsection.length-1] == null)
-        {
-            last = " "
-        }
-        else
-        {
-            last = wordinsection[wordinsection.length-1];
-        }
-        if (!last.match(/[.|,|:|;|!|?|"|`|%]/) && lastcar != ' ') {
-            var autorequest = new XMLHttpRequest();
-                var url = "/autocomplete";
-                autorequest.open("POST", url, true);
-                autorequest.setRequestHeader("Content-Type", "application/json");
-                autorequest.onreadystatechange = function () {
-            if (autorequest.readyState === 4 && autorequest.status === 200)
-            {
-            var json = JSON.parse(autorequest.responseText);
-            answer = json.result;
-            toshow = answer.substr(last.length - answer.length);
-            htmltoshow.textContent = toshow
-            document.body.appendChild(htmltoshow);
-            caret = getCaretTopPoint();
-            qleditor = document.getElementsByClassName("ql-editor")[0]
-            htmltoshow.style.position = "absolute";
-            htmltoshow.style.fontSize = window.getComputedStyle(qleditor.children[lastsection -1]).fontSize;
-            htmltoshow.style.color = "black";
-            htmltoshow.style.fontStyle = "normal"
-            if (qleditor.children[lastsection -1].children[lenghtofstyle-1] != null)
-            {
-                htmltoshow.style.fontStyle = window.getComputedStyle(lastrecurelement(qleditor)).fontStyle;
-                htmltoshow.style.color = window.getComputedStyle(lastrecurelement(qleditor)).color;
-            }
-            if(!leftpos && toppos){
-                if(parseInt(htmltoshow.style.left) <= parseInt(caret.left) + 0.5)
-                {
-                    htmltoshow.style.left = caret.left +0.5 + "px";
-                    htmltoshow.style.display = "block";
-                }
-                else
-                {
-                    htmltoshow.style.display = "none";
-                    histcarettop = 1;
-                }
-            }
-            else
-            {
-                htmltoshow.style.left = caret.left + 0.5 + "px";
-            }
-            htmltoshow.style.top = caret.top - 2.5 + "px";
-            if(parseInt(htmltoshow.style.left) + parseInt(window.getComputedStyle(htmltoshow).width) >= (document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().right - parseInt(window.getComputedStyle(document.getElementsByClassName("ql-editor")[0], null).paddingLeft)*2))
-            {
-                htmltoshow.style.display = "none";
-            }
-            else
-            {
-                htmltoshow.style.display = "block";
-            }
-            if(!leftpos && toppos)
-            {
-                if(parseFloat(htmltoshow.style.left) > parseFloat(caret.left) || parseInt(histcarettop) != parseInt(caret.top) )
-                {
-                    htmltoshow.style.left = caret.left +0.5 + "px";
-                    htmltoshow.style.display = "block";
-                }
-                if(parseFloat(htmltoshow.style.left) < parseFloat(caret.left) && parseInt(histcarettop) == parseInt(caret.top) )
-                {
-                    htmltoshow.style.display = "block";
-                    histcarettop = 1;
-                }
-            }
-            if (histcaretleft < caret.left){
-                histcaretleft = caret.left;
-            }
-            if (histcarettop ==1 && histcaretleft ==1){
-            }
-            else if(histcarettop==1){
-                htmltoshow.style.display = "none";
-                if (histcaretleft > caret.left){
-                histcarettop = caret.top;
-                }
-
-            }
-            else{
-            histcarettop = caret.top;
-            }
-            document.body.appendChild(htmltoshow);
-            if(caret.left + htmltoshow.getBoundingClientRect().width > qleditor.getBoundingClientRect().right){
-                htmltoshow.style.display = "none";
-            }
-            }
-                };
-                var data = JSON.stringify({"begin": last});
-                autorequest.send(data);
-        }
-        else
-        {
-            htmltoshow.textContent = "";
-        }
-    }
-    else
-    {
-        htmltoshow.textContent = "";
-    }
-}
-document.getElementsByClassName("ql-editor")[0].addEventListener("keydown", clear);
-function clear(event)
-{
-   var KeyID = event.keyCode;
-   switch(KeyID)
-   {
-      case 8:
-        htmltoshow.textContent = "";
-        break;
-      case 9:
-          if(!htmltoshow.textContent == "" || htmltoshow.style.display == "none"){
-              if (qleditor.lastChild.innerHTML[qleditor.lastChild.innerHTML.length-1] === "\t"){
-                    qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1)
-              }
-                lastrecurelement(qleditor).insertAdjacentHTML('beforeend', htmltoshow.textContent);
-                htmltoshow.textContent = "";
-                var range = document.createRange()
-                var sel = window.getSelection()
-                var len = lastrecurelement(qleditor).childNodes.length
-                range.setStart(lastrecurelement(qleditor).childNodes[len-1], 1)
-                range.collapse(true)
-                sel.removeAllRanges()
-                sel.addRange(range)
-          }
-        break;
-      case 13:
-        htmltoshow.textContent = "";
-        break;
-      case 46:
-        htmltoshow.textContent = "";
-        break;
-      default:
-        break;
-   }
-}
-function lastrecurelement(t)
-{
-    if (t.lastChild.lastChild == t.lastChild.lastElementChild)
-    {
-        while(t != null)
-        {
-            j = t.lastElementChild;
-            if (j == null)
-            {
-                return t;
-                break;
-            } else
-            {
-                t = t.lastElementChild
-            }
-        }
-    }
-    else {
-        return t.lastElementChild
-    }
-}
+    document.getElementById("sectionnumber").value = {{ last }}
+    getRessourceProject(document.getElementById('sectionnumber').value);
 </script>
 {% endblock %}

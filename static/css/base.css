@@ -288,11 +288,22 @@ footer {
 }
 
 #editorjs {
-  background-color: white;
-  color: black;
+  background-color: white !important;
+  color: black !important;
   height: 12rem;
+  font-family: "Nunito", sans-serif !important;
+}
+#disablededitorjs .ql-editor strong {
+  color: inherit;
+  background-color: inherit;
 }
 
+#disablededitorjs {
+  background-color: white !important;
+  color: black !important;
+  height: 12rem;
+  font-family: "Nunito", sans-serif !important;
+}
 .pagination {
   margin: auto !important;
 }

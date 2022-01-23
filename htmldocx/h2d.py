@@ -453,9 +453,6 @@ class HtmlToDocx(HTMLParser):
         elif tag == 'ol' or tag == 'ul':
             self.tags['list'].append(tag)
             return  # don't apply styles for now
-        elif tag == 'br':
-            self.run.add_break()
-            return
 
         self.tags[tag] = current_attrs
         if tag in ['p', 'pre']:
