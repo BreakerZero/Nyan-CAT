@@ -18,6 +18,7 @@ from translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
 import html2text
+import threading
 
 app = Flask(__name__)
 app.config['DROPZONE_REDIRECT_VIEW'] = "home"
@@ -41,12 +42,10 @@ login_manager.login_view = '/login'
 login_manager.init_app(app)
 dropzone = Dropzone(app)
 ConvAPI = ConverterAPI()
-
 popfile = open("database/pop_french.txt", 'r', encoding="utf-8")
 popword = [line.split('\n') for line in popfile.readlines()]
 globalfile = open("database/french.txt", 'r', encoding="utf-8")
 word = [line.split('\n') for line in globalfile.readlines()]
-
 
 @app.errorhandler(413)
 def too_large(e):
@@ -73,10 +72,12 @@ class User(UserMixin, db.Model):  # Modèle utilisateur
     Mail = db.Column(db.Text, nullable=False, unique=True)
     Password = db.Column(db.Text, nullable=False)
     Status = db.Column(db.Integer)
-    Translator = db.Column(db.Text, nullable=False)
+    TranslatorSettings = db.Column(db.Text, nullable=False)
     TranslatorProvider = db.Column(db.Text, nullable=False)
     Formality = db.Column(db.Text)
     ApiKey = db.Column(db.Text, nullable=False)
+    KeepStyle = db.Column(db.Integer)
+    Autocomplete = db.Column(db.Integer)
 
 
 
@@ -262,11 +263,37 @@ def home():
     return render_template('home.html', pseudo=current_user.Pseudo, Projectlist=Projectlist)
 
 
-@app.route("/settings")
+@app.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
-    return 'settings'
-
+    currentid = str(flask_login.current_user.id)
+    User_to_Update = User.query.get_or_404(currentid)
+    if request.method == "POST":
+        User_to_Update.TranslatorProvider = request.form.get('translatorprovider')
+        User_to_Update.ApiKey = request.form.get('api')
+        User_to_Update.KeepStyle = True if request.form.get('keepstyle') else False
+        User_to_Update.Autocomplete = True if request.form.get('autocomplete') else False
+        translatorsettings = request.form.get('translatorsettings')
+        if translatorsettings == "Actif":
+            User_to_Update.TranslatorSettings = "More"
+        elif translatorsettings == "Passif":
+            User_to_Update.TranslatorSettings = "Less"
+        else:
+            User_to_Update.TranslatorSettings = "Disabled"
+        formality = request.form.get('formality')
+        if formality == "Informel":
+            User_to_Update.Formality = "informal"
+        elif formality == "Formel":
+            User_to_Update.Formality = "formal"
+        else:
+            User_to_Update.Formality = None
+        try:
+            db.session.commit()
+            return redirect("/home")
+        except:
+            return "la mise à jour de l'utilisateur a échoué"
+    else:
+        return render_template('settings.html', User_to_Update=User_to_Update)
 
 @app.route("/newproject", methods=["GET", "POST"])
 @login_required
@@ -355,7 +382,15 @@ def project(id):
                             SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
                             TranslatedDocx.save(SaveName)
                         SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
-                        TranslatedDocx = docx.Document(SaveName)
+                        mutex = threading.Lock()
+                        mutex.acquire()
+                        while mutex.locked(): #pour gérer un grand nombre d'écriture fichier
+                            try:
+                                TranslatedDocx = docx.Document(SaveName)
+                            except:
+                                pass
+                            else:
+                                mutex.release()
                         text = html2text.html2text(TranslatedHtml)
                         if idblock < len(TranslatedDocx.paragraphs):
                             if TranslatedDocx.paragraphs[idblock].text != text:
@@ -392,6 +427,4 @@ def project(id):
 app.run(host="127.0.0.1", port=5000, threaded=True)
 
 #to do:
-#Création page paramètre : keepstyle, provider, api, présence du traducteur, formalité, autocomplete
-#Voir si un moyen existe pour gérer un très grand nombre de requete d'écriture sur un même fichier (non dérangeant)
-#https://blog.miguelgrinberg.com/post/using-celery-with-flask
+#Prise en compte des paramètres User dans le back de docxproject + alléger la structure du back de docxproject -> fonctions externalisées

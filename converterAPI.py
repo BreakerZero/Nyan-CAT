@@ -2,15 +2,13 @@ import re
 import docx
 from htmldocx import HtmlToDocx
 
-
 class ConverterAPI:
     def __init__(self):
         self.new_parser = HtmlToDocx()
 
     def ParaHtmlToDocx(self, Html: str, Docx: docx.document, ParaPosition: int, SaveName: str):
-        off = 0
         tempdocx = self.new_parser.parse_html_string(Html)  # docx file with only the html conversion
-        tempdocx.save("temp.docx")
+        #tempdocx.save("temp.docx")
         for ParaInHtml in range(0, len(tempdocx.paragraphs)):
             if len(tempdocx.paragraphs) + ParaPosition > len(Docx.paragraphs):
                 Docx.add_paragraph()
@@ -35,7 +33,6 @@ class ConverterAPI:
                 Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.name = run.font.name
                 Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.size = run.font.size
             Docx.save(SaveName)
-        return off
 
     def ParaDocxToHtml(self, Docx: docx.document, ParaPosition: int):
         if ParaPosition >= len(Docx.paragraphs):

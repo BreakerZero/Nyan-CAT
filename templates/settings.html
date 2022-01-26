@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% endblock %}
+{% block content %}
+    <h1 class="title">Paramètres</h1>
+    <div class="box">
+    <form action="/settings" method="POST">
+        <input class="button is-fullwidth is-primary" type="submit" value="Valider" id="upload-btn">
+        <div class="field-body">
+            <div class="field is-grouped">
+                <label class="label is-expanded">Traducteur:</label>
+                <div class="select is-rounded">
+                    <select id="translatorprovider" name="translatorprovider">
+                        <option>Nyan-CAT</option>
+                        <option>DeepL</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <label class="label is-expanded">Si vous possédez une clé API du traducteur automatique Deepl, veuillez l'insérer ici:</label>
+        <div class="field">
+            <div class="control has-icons-left">
+                <input class="input is-large" type="text" placeholder="Clé API" id="api" name="api" value="{{ User_to_Update.ApiKey }}">
+                    <span class="icon is-medium is-left">
+                        <i class="fas fa-key fa-lg is-primary"></i>
+                    </span>
+            </div>
+            <p class="help">Une clé API gratuite peut être obtenue gratuitement sur le <a href="https://www.deepl.com/fr/pro#developer" target="_blank">site de Deepl</a></p>
+        </div>
+        <div class="field">
+            <div class="field is-grouped">
+                <label class="label is-expanded">Formalité:</label>
+                <div class="select is-rounded">
+                    <select id="formality" name="formality">
+                        <option>Auto</option>
+                        <option>Formel</option>
+                        <option>Informel</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="field-body">
+            <div class="field is-grouped">
+                <label class="label is-expanded">Comportement du traducteur<sup>*</sup>:</label>
+                <div class="select is-rounded">
+                    <select id="translatorsettings" name="translatorsettings">
+                        <option>Actif</option>
+                        <option>Passif</option>
+                        <option>Désactivé</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="field-body">
+                        <div class="field is-grouped">
+                <label class="checkbox" style="margin: auto;">Conserver le style original des paragraphes
+                    <input type="checkbox" name="keepstyle" id="cby" style="display:none">
+                    <label for="cby" class="toggle"><span></span></label>
+                </label>
+            </div>
+            <div class="field is-grouped">
+                <label class="checkbox" style="margin: auto;">Activer l'autocompletion
+                    <input type="checkbox" name="autocomplete" id="cbz" style="display:none">
+                    <label for="cbz" class="toggle"><span></span></label>
+                </label>
+            </div>
+        </div>
+    </form>
+    </div>
+    <p class="help lastelement" style="text-align: justify;"><sup>*</sup>Si aucune équivalence n'a été trouvé dans vos précédentes traductions, votre traducteur automatique peut alors vous proposer une traduction: en mode <u>actif</u>, la traduction sera immédiatement sauvegardée dans le document final (elle reste malgré tout modifiable à tout moment), en mode <u>passif</u>, la traduction sera visible en surbrillance, appuyez sur tabulation pour l'insérer ou commencez à saisir une meilleure traduction manuellement pour l'ignorer.</p>
+    <script>
+    window.addEventListener('DOMContentLoaded', function() {
+    if ("{{ User_to_Update.TranslatorProvider }}" == "DeepL"){
+        document.getElementById("translatorprovider").selectedIndex = 1;
+        }
+    if ("{{ User_to_Update.Formality }}" == "formal"){
+        document.getElementById("formality").selectedIndex = 1;
+    }
+    if ("{{ User_to_Update.Formality }}" == "informal"){
+        document.getElementById("formality").selectedIndex = 2;
+    }
+    if ("{{ User_to_Update.TraslatorSettings }}" == "Less"){
+        document.getElementById("translatorsettings").selectedIndex = 1;
+    }
+    if ("{{ User_to_Update.TraslatorSettings }}" == "Disabled"){
+        document.getElementById("translatorsettings").selectedIndex = 2;
+    }
+    if ({{ User_to_Update.KeepStyle }}){
+        document.getElementById("cby").checked = true;
+    }
+    if ({{ User_to_Update.Autocomplete }}){
+        document.getElementById("cbz").checked = true;
+    }
+});
+    </script>
+{% endblock %}

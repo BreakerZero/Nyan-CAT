@@ -72,6 +72,40 @@
   transition: all 0.4s ease;
 }
 
+#cby:checked + .toggle:before {
+  background: #f2a0a0;
+}
+
+#cby:checked + .toggle span {
+  background: #f83e3e;
+  transform: translateX(20px);
+  transition: all 0.2s cubic-bezier(0.8, 0.4, 0.3, 1.25), background 0.5s ease;
+  box-shadow: 0 3px 8px rgba(255, 0, 0, 0.2);
+}
+
+#cby:checked + .toggle span:before {
+  transform: scale(1);
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
+#cbz:checked + .toggle:before {
+  background: #f2a0a0;
+}
+
+#cbz:checked + .toggle span {
+  background: #f83e3e;
+  transform: translateX(20px);
+  transition: all 0.2s cubic-bezier(0.8, 0.4, 0.3, 1.25), background 0.5s ease;
+  box-shadow: 0 3px 8px rgba(255, 0, 0, 0.2);
+}
+
+#cbz:checked + .toggle span:before {
+  transform: scale(1);
+  opacity: 0;
+  transition: all 0.4s ease;
+}
+
 .waves {
   position: absolute;
   width: 100%;
