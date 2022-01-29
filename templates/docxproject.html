@@ -34,13 +34,13 @@
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Actuel</label>
-            <div id="disablededitorjs" oninput="autocompletescript(event)" onkeypress="clear(event)"></div>
+            <div id="disablededitorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)" {% endif %} ></div>
         </div>
     </div>
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Actuel</label>
-            <div id="editorjs" oninput="autocompletescript(event)" onkeypress="clear(event)"></div>
+            <div id="editorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)"  {% endif %}></div>
         </div>
     </div>
     <div class="column is-half">
@@ -65,7 +65,7 @@
 
 <script src="{{ url_for('static', filename='js/inputFilter.js') }}" type="application/javascript"></script>
 <script src="{{ url_for('static', filename='js/createEditor.js') }}" type="application/javascript"></script>
-<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>
+{% if complete %}<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>{% endif %}
 <script>
 var previousidblock = null
 function getRessourceProject(block){
@@ -84,7 +84,9 @@ function getRessourceProject(block){
             var json = JSON.parse(translatedrequest.responseText);
             var htmlblock = json.result;
             document.getElementsByClassName("ql-editor")[1].innerHTML = htmlblock
+            {% if keepstyle %}
             document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres
+            {% endif %}
 
         }
     };
@@ -101,8 +103,12 @@ function getRessourceProject(block){
     };
     var resourcedata = JSON.stringify({"ressource": block});
     ressourcerequest.send(resourcedata);
+    {% if keepstyle %}
     document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres
+    {% endif %}
+    {% if complete %}
     htmltoshow.textContent = ""
+    {% endif %}
     }
 </script>
 <script>

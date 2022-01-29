@@ -1,7 +1,7 @@
 le
 de
 un
-à 
+à
 être
 et
 en
@@ -55,7 +55,7 @@ cela
 entre
 premier
 vouloir
-déjà 
+déjà
 grand
 mon
 me
@@ -106,7 +106,7 @@ porter
 parler
 fort
 montrer
-là 
+là
 certain
 fin
 tu
@@ -521,7 +521,7 @@ journal
 annoncer
 lui-même
 tour
-voilà 
+voilà
 volonté
 envoyer
 partager
@@ -557,7 +557,7 @@ genre
 retenir
 communauté
 intéresser
-c'est-à -dire
+c'est-à-dire
 corps
 matière
 sein
@@ -1169,7 +1169,7 @@ mercredi
 régional
 sinon
 entreprendre
-au-delà 
+au-delà
 étendre
 sortie
 profond
@@ -1373,7 +1373,7 @@ institut
 victoire
 arrêt
 concours
-vis-à -vis
+vis-à-vis
 aboutir
 visiter
 elle-même
@@ -1774,7 +1774,7 @@ théorie
 hôtel
 nier
 phénomène
-là -bas
+là-bas
 étonner
 totalité
 sort
@@ -2205,7 +2205,7 @@ municipal
 salut
 songer
 enfance
-là -dessus
+là-dessus
 merveilleux
 sien
 commenter
@@ -3793,7 +3793,7 @@ récolter
 tchèque
 autoroute
 maternité
-là -dedans
+là-dedans
 différend
 explicite
 comté
@@ -4364,7 +4364,7 @@ localité
 récupération
 vigoureux
 rentabilité
-delà 
+delà
 incliner
 affreux
 révolter

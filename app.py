@@ -2,7 +2,7 @@ import json
 from operator import truediv
 import os
 import docx
-from converterAPI import ConverterAPI
+from backend.converterAPI import ConverterAPI
 from enum import unique
 from re import template
 from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort, Blueprint, \
@@ -14,7 +14,7 @@ from flask_mysqldb import MySQL
 import flask_sqlalchemy
 from werkzeug.datastructures import auth_property
 from werkzeug.utils import redirect, secure_filename
-from translateAPI import TranslatorAPI
+from backend.translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
 import html2text
@@ -121,6 +121,7 @@ def index():
 @login_required
 def autocomplete():
     toshearch = request.json["begin"]
+    toshearch = str(toshearch).lower()
     matching = [i for i in popword if i[0].startswith(toshearch)]
     if len(matching) == 0:
         matching = [i for i in word if i[0].startswith(toshearch)]
@@ -338,9 +339,12 @@ def project(id):
             extension = str(Project.query.filter_by(id=id).first().Extension)
             last = str(Project.query.filter_by(id=id).first().Last_Block)
             files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
+            keepstyle = bool(User.query.filter_by(id=flask_login.current_user.id).first().KeepStyle)
+            complete = bool(User.query.filter_by(id=flask_login.current_user.id).first().Autocomplete)
+            translatorsettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorSettings)
             if type == "Roman/Light Novel (Textuel)":
                 if extension == "docx":
-                    return render_template('docxproject.html', id=id, last=last)
+                    return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete)
                 if extension == "txt":
                     return "txt"
                 if extension == "pdf":
@@ -357,7 +361,6 @@ def project(id):
             extension = str(Project.query.filter_by(id=id).first().Extension)
             source = str(Project.query.filter_by(id=id).first().Source_Lang)
             target = str(Project.query.filter_by(id=id).first().Target_Lang)
-            translatorsettings = str(User.query.filter_by(id=flask_login.current_user.id).first().Translator)
             translatorprovidersettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorProvider)
             formality = str(User.query.filter_by(id=flask_login.current_user.id).first().Formality)
             apikey = str(User.query.filter_by(id=flask_login.current_user.id).first().ApiKey)
@@ -427,4 +430,4 @@ def project(id):
 app.run(host="127.0.0.1", port=5000, threaded=True)
 
 #to do:
-#Prise en compte des paramètres User dans le back de docxproject + alléger la structure du back de docxproject -> fonctions externalisées
+#Prise en compte du comportement traducteur du User dans le back de docxproject

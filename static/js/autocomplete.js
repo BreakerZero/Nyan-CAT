@@ -1,4 +1,3 @@
-
 htmltoshow = document.createElement('span')
 htmltoshow.style.opacity = 0.4;
 htmltoshow.style.userSelect = "none";
@@ -28,7 +27,7 @@ function autocompletescript(event){
         {
             last = wordinsection[wordinsection.length-1];
         }
-        if (!last.match(/[.|,|:|;|!|?|"|`|%]/) && lastcar != ' ') {
+        if (!last.match(/[.|,|:|;|!|?|"|`|%]/) && lastcar !== ' ') {
             var autocompleterequest = new XMLHttpRequest();
                 var url = "/autocomplete";
                 autocompleterequest.open("POST", url, true);
@@ -79,12 +78,12 @@ function autocompletescript(event){
             }
             if(!leftpos && toppos)
             {
-                if(parseFloat(htmltoshow.style.left) > parseFloat(caret.left) || parseInt(histcarettop) != parseInt(caret.top) )
+                if(parseFloat(htmltoshow.style.left) > parseFloat(caret.left) || parseInt(histcarettop) !== parseInt(caret.top) )
                 {
                     htmltoshow.style.left = caret.left + "px";
                     htmltoshow.style.display = "block";
                 }
-                if(parseFloat(htmltoshow.style.left) < parseFloat(caret.left) && parseInt(histcarettop) == parseInt(caret.top) )
+                if(parseFloat(htmltoshow.style.left) < parseFloat(caret.left) && parseInt(histcarettop) === parseInt(caret.top))
                 {
                     htmltoshow.style.display = "block";
                     histcarettop = 1;
@@ -93,10 +92,9 @@ function autocompletescript(event){
             if (histcaretleft < caret.left){
                 histcaretleft = caret.left;
             }
-            if (histcarettop ==1 && histcaretleft ==1){
-            }
-            else if(histcarettop==1){
-                htmltoshow.style.display = "none";
+            if (histcarettop ===1 && histcaretleft ===1){}
+            else if(histcarettop===1){
+                htmltoshow.style.display = "block";
                 if (histcaretleft > caret.left){
                 histcarettop = caret.top;
                 }
@@ -106,7 +104,8 @@ function autocompletescript(event){
             histcarettop = caret.top;
             }
             document.body.appendChild(htmltoshow);
-            if(caret.left + htmltoshow.getBoundingClientRect().width > qleditor.getBoundingClientRect().right){
+            if(caret.left + htmltoshow.getBoundingClientRect().width > qleditor.getBoundingClientRect().right)
+            {
                 htmltoshow.style.display = "none";
             }
             }
@@ -134,7 +133,7 @@ function clear(event)
         htmltoshow.textContent = "";
         break;
       case 9:
-          if(!htmltoshow.textContent == "" || htmltoshow.style.display == "none"){
+          if((htmltoshow.textContent !== "") && (htmltoshow.style.display !== "none")){
               if (qleditor.lastChild.innerHTML[qleditor.lastChild.innerHTML.length-1] === "\t"){
                     qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1)
               }
@@ -161,7 +160,7 @@ function clear(event)
 }
 function lastrecurelement(t)
 {
-    if (t.lastChild.lastChild == t.lastChild.lastElementChild)
+    if (t.lastChild.lastChild === t.lastChild.lastElementChild)
     {
         while(t != null)
         {
