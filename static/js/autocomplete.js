@@ -3,8 +3,19 @@ htmltoshow.style.opacity = 0.4;
 htmltoshow.style.userSelect = "none";
 htmltoshow.style.lineHeight = 1.42;
 htmltoshow.style.left = 0;
+htmltoshow.setAttribute("id", "autocompleter");
 histcarettop = 0;
 histcaretleft = 0;
+htmltoshow.style.position = "absolute";
+htmltoshow.style.color = "black";
+htmltoshow.style.fontStyle = "normal"
+htmltoshow.style.maxWidth= document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().width + "px";
+htmltoshow.style.maxHeight= document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().height + "px";
+htmltoshow.style.overflow = "hidden";
+htmltoshow.style.cursor = "text";
+htmltoshow.addEventListener("mouseup", function(e){
+    document.getElementsByClassName("ql-editor")[1].focus();
+});
 function autocompletescript(event){
     lastsection = document.getElementsByClassName("ql-editor")[1].children.length;
     wordinsection = document.getElementsByClassName("ql-editor")[1].children[lastsection -1].textContent.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; });
@@ -16,7 +27,7 @@ function autocompletescript(event){
     range.selectNode(text);
     var rect = range.getBoundingClientRect();
     leftpos = Math.round(getCaretTopPoint().left) >= Math.round(document.getElementsByClassName("ql-editor")[1].children[lastsection -1].getBoundingClientRect().left + rect.width);
-    toppos = Math.round(getCaretTopPoint().top + (document.body.getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().top) + parseInt(window.getComputedStyle(document.getElementsByClassName("ql-editor")[1].children[lastsection -1]).lineHeight, 10))>=Math.round(-(document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[1].children[lastsection-1].getBoundingClientRect().bottom));
+    toppos = Math.round(getCaretTopPoint().top + (document.body.getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().top) + parseInt(window.getComputedStyle(document.getElementsByClassName("ql-editor")[1].children[lastsection -1]).lineHeight, 10))+1>=Math.round(-(document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().top - document.getElementsByClassName("ql-editor")[1].children[lastsection-1].getBoundingClientRect().bottom));
     if (leftpos && toppos || !leftpos && toppos)
     {
         if ( wordinsection[wordinsection.length-1] == null)
@@ -41,11 +52,8 @@ function autocompletescript(event){
             htmltoshow.textContent = toshow
             document.body.appendChild(htmltoshow);
             caret = getCaretTopPoint();
-            qleditor = document.getElementsByClassName("ql-editor")[1]
-            htmltoshow.style.position = "absolute";
+            qleditor = document.getElementsByClassName("ql-editor")[1];
             htmltoshow.style.fontSize = window.getComputedStyle(qleditor.children[lastsection -1]).fontSize;
-            htmltoshow.style.color = "black";
-            htmltoshow.style.fontStyle = "normal"
             if (qleditor.children[lastsection -1].children[lenghtofstyle-1] != null)
             {
                 htmltoshow.style.fontStyle = window.getComputedStyle(lastrecurelement(qleditor)).fontStyle;
@@ -124,40 +132,52 @@ function autocompletescript(event){
     }
 }
 document.getElementsByClassName("ql-editor")[1].addEventListener("keydown", clear);
-function clear(event)
-{
-   var KeyID = event.keyCode;
-   switch(KeyID)
-   {
-      case 8:
-        htmltoshow.textContent = "";
-        break;
-      case 9:
-          if((htmltoshow.textContent !== "") && (htmltoshow.style.display !== "none")){
-              if (qleditor.lastChild.innerHTML[qleditor.lastChild.innerHTML.length-1] === "\t"){
-                    qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1)
-              }
+function clear(event) {
+    var KeyID = event.keyCode;
+
+    if (typeof qleditor === "undefined") {
+        var qleditor = document.getElementsByClassName("ql-editor")[1];
+    }
+    switch (KeyID) {
+        case 8:
+            htmltoshow.textContent = "";
+            break;
+        case 9:
+            if ((htmltoshow.textContent !== "") && (htmltoshow.style.display !== "none"))
+            {
+                if (qleditor.lastChild.innerHTML[qleditor.lastChild.innerHTML.length - 1] === "\t")
+                {
+                    qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1);
+                }
                 lastrecurelement(qleditor).insertAdjacentHTML('beforeend', htmltoshow.textContent);
-                htmltoshow.textContent = "";
                 var range = document.createRange()
                 var sel = window.getSelection()
                 var len = lastrecurelement(qleditor).childNodes.length
-                range.setStart(lastrecurelement(qleditor).childNodes[len-1], 1)
+                if (qleditor.children[0].innerText === htmltoshow.textContent)
+                {
+                    range.setStart(lastrecurelement(qleditor).childNodes[0], htmltoshow.textContent.length)
+                }
+                else
+                {
+                    range.setStart(lastrecurelement(qleditor).childNodes[len - 1], 1)
+                }
+                htmltoshow.textContent = "";
                 range.collapse(true)
                 sel.removeAllRanges()
                 sel.addRange(range)
-          }
-        break;
-      case 13:
-        htmltoshow.textContent = "";
-        break;
-      case 46:
-        htmltoshow.textContent = "";
-        break;
-      default:
-        break;
-   }
+            }
+            break;
+        case 13:
+            htmltoshow.textContent = "";
+            break;
+        case 46:
+            htmltoshow.textContent = "";
+            break;
+        default:
+            break;
+    }
 }
+
 function lastrecurelement(t)
 {
     if (t.lastChild.lastChild === t.lastChild.lastElementChild)

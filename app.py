@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 from operator import truediv
 import os
@@ -5,8 +6,7 @@ import docx
 from backend.converterAPI import ConverterAPI
 from enum import unique
 from re import template
-from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort, Blueprint, \
-    Response
+from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort, Blueprint, Response
 import flask_login
 from sqlalchemy.sql.elements import Null
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -32,8 +32,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database//nyan.db'  # Nom de la bdd
 app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
 app.config['UPLOAD_FOLDER'] = "fileproject"
-app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt',
-                                   '.txt']  # extensions autorisées
+app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt','.txt']  # extensions autorisées
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 50  # max 50Mo
 db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
@@ -42,10 +41,7 @@ login_manager.login_view = '/login'
 login_manager.init_app(app)
 dropzone = Dropzone(app)
 ConvAPI = ConverterAPI()
-popfile = open("database/pop_french.txt", 'r', encoding="utf-8")
-popword = [line.split('\n') for line in popfile.readlines()]
-globalfile = open("database/french.txt", 'r', encoding="utf-8")
-word = [line.split('\n') for line in globalfile.readlines()]
+
 
 @app.errorhandler(413)
 def too_large(e):
@@ -93,6 +89,21 @@ class Project(db.Model):  # Modèle projet
     Last_Block = db.Column(db.Integer, nullable=False)
     Last_Previous_Block = db.Column(db.Integer, nullable=False)
 
+class Lexicon_fr(db.Model):
+    id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
+    ortho = db.Column(db.String, nullable=False)
+    freqfilms = db.Column(db.Float, nullable=False)
+    freqlivres = db.Column(db.Float, nullable=False)
+
+class TranslationMemory(db.Model):  # Modèle mémoire de traduction
+    id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
+    Source_Lang = db.Column(db.Text, nullable=False)
+    Target_Lang = db.Column(db.Text, nullable=False)
+    Source = db.Column(db.Text, nullable=False)
+    Target = db.Column(db.Text, nullable=False)
+    Owner = db.Column(db.Integer, nullable=False)
+    Project = db.Column(db.Integer, nullable=False)
+    Segment = db.Column(db.Integer, nullable=False)
 
 def Glos():  # fonction formatage glossaire
     formatedGlo = ""
@@ -110,35 +121,44 @@ def Glos():  # fonction formatage glossaire
 
 formatedGlossary = Glos()
 
-
 @app.route('/', methods=["GET"])  # racine site
 def index():
-    Glo = Glossary.query.filter_by(Source="Data Overmind").first()  # toute les tâches par ordre d'ID
-    return render_template('index.html', Glo=Glo)  # template avec réponse de requete de task
+    return render_template('index.html')
 
 
 @app.route('/autocomplete', methods=["POST"])
 @login_required
 def autocomplete():
-    toshearch = request.json["begin"]
-    toshearch = str(toshearch).lower()
-    matching = [i for i in popword if i[0].startswith(toshearch)]
-    if len(matching) == 0:
-        matching = [i for i in word if i[0].startswith(toshearch)]
-
-    try:
-        if matching[0][0] == toshearch:
-            try:
-                return jsonify({"result": matching[1][0]})
-            except:
+    tosearch = request.json["begin"]
+    tosearch = str(tosearch).lower()
+    matching= Lexicon_fr.query.filter(Lexicon_fr.ortho.startswith(tosearch)).order_by(Lexicon_fr.freqlivres.desc(), Lexicon_fr.freqfilms.desc()).limit(2).all()
+    if len(matching) == 2:
+        if str(matching[0].ortho) == tosearch and str(matching[0].ortho) != str(matching[1].ortho) :
+            if " " not in str(matching[1].ortho):
+                return jsonify({"result": matching[1].ortho})
+            else:
                 return jsonify({"result": " "})
+        elif str(matching[0].ortho) == tosearch and str(matching[0].ortho) == str(matching[1].ortho):
+            return jsonify({"result": " "})
         else:
-            return jsonify({"result": matching[0][0]})
-    except:
+            if " " not in str(matching[0].ortho):
+                return jsonify({"result": matching[0].ortho})
+            else:
+                return jsonify({"result": " "})
+    elif len(matching) == 1:
+        if str(matching[0].ortho) == tosearch:
+            return jsonify({"result": " "})
+        else:
+            if " " not in str(matching[0].ortho):
+                return jsonify({"result": matching[0].ortho})
+            else:
+                return jsonify({"result": " "})
+    else:
         return jsonify({"result": " "})
 
 
 @app.route('/translate', methods=["POST"])  # chemin de l'API de traduction
+@login_required
 def get_prediction():
     provider = request.json['provider']
     apikey = request.json['apikey']
@@ -218,6 +238,14 @@ def login():
             flash("Authentification impossible, vérifiez vos informations d'identification.")
             return redirect("/login")
         else:
+            path = "static/json/memory"+str(testpseudo.id)+".json"
+            jsonfile = open(path, "w", encoding="UTF-8")
+            data = TranslationMemory.query.filter_by(Owner=int(testpseudo.id)).all()
+            jsondata = []
+            for i in data:
+                jsondata.append({"id": i.id, "Source_Lang": i.Source_Lang, "Target_Lang": i.Target_Lang, "Source": i.Source, "Target": i.Target})
+            json.dump(jsondata, jsonfile)
+            jsonfile.close()
             login_user(testpseudo, remember=remember)
             return redirect("/home")
     else:
@@ -252,6 +280,8 @@ def signup():
 @app.route('/logout')
 @login_required
 def logout():
+    if os.path.exists("static/json/memory"+str(flask_login.current_user.id)+".json"):
+        os.remove("static/json/memory"+str(flask_login.current_user.id)+".json")
     logout_user()
     return redirect("/")
 
@@ -342,9 +372,10 @@ def project(id):
             keepstyle = bool(User.query.filter_by(id=flask_login.current_user.id).first().KeepStyle)
             complete = bool(User.query.filter_by(id=flask_login.current_user.id).first().Autocomplete)
             translatorsettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorSettings)
+            project = Project.query.filter_by(id=id).first()
             if type == "Roman/Light Novel (Textuel)":
                 if extension == "docx":
-                    return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete)
+                    return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete, user=flask_login.current_user, project=project, translatorsettings=translatorsettings)
                 if extension == "txt":
                     return "txt"
                 if extension == "pdf":
@@ -368,19 +399,19 @@ def project(id):
                 if extension == "docx":
                     files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
                     namefile = str(files[0])
-                    if "ressource" in request.json:
+                    if "ressource" in request.json: #Demande ressouce fichier original
                         idblock = int(request.json["ressource"])
                         OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
                         Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
                         return jsonify({"result": Html})
-                    elif "translated" in request.json:
+                    elif "translated" in request.json: #Demande ressouce fichier traduit
                         idblock = int(request.json["translated"])
                         idpreviousblock = request.json["previoustranslated"]
                         OriginalHtml = str(request.json["originaltext"])
                         TranslatedHtml = str(request.json["translatedtext"])
                         if TranslatedHtml == "<p><br></p>":
                             TranslatedHtml = "<p></p>"
-                        if len(files) == 1:
+                        if len(files) == 1: #Création du fichier de sortie s'il n'existe pas
                             TranslatedDocx = docx.Document()
                             SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
                             TranslatedDocx.save(SaveName)
@@ -395,16 +426,16 @@ def project(id):
                             else:
                                 mutex.release()
                         text = html2text.html2text(TranslatedHtml)
-                        if idblock < len(TranslatedDocx.paragraphs):
-                            if TranslatedDocx.paragraphs[idblock].text != text:
+                        if idblock < len(TranslatedDocx.paragraphs): #L'écriture du fichier de sortie s'écrivant au fur et à mesure
+                            if TranslatedDocx.paragraphs[idblock].text != text: #Si le text est différant on enregistre ce nouveau texte
                                 if idpreviousblock is not None:
                                     ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
                                 Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
                             else:
                                 Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-                        else:
+                        else: #Si le block n'existe pas dans le document de sortie
                             text = html2text.html2text(OriginalHtml)
-                            translation = TranslatorAPI.translate(translator, translatorprovidersettings, apikey, source, target, formality, text, formatedGlossary)
+                            translation = TranslatorAPI.translate(translator, translatorprovidersettings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
                             Html = '<p>' + translation + "</p>"
                             ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
                         Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
@@ -426,8 +457,26 @@ def project(id):
         logout_user()
         return redirect('/')
 
+@app.route("/addsegment", methods=['POST'])
+@login_required
+def addsegment():
+    if request.method == 'POST':
+        User_ID = request.json['User_ID']
+        Project_ID = request.json['Project_ID']
+        Segment_ID = request.json['Segment_ID']
+        Source = request.json['Source']
+        Target = request.json['Target']
+        Source_Lang = request.json['Source_Lang']
+        Target_Lang = request.json['Target_Lang']
+        #search if the segment already exists
+        if TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).first() is None:
+            New_TranslationMemory = TranslationMemory(Owner=User_ID, Project=Project_ID, Segment=Segment_ID, Source=Source, Target=Target, Source_Lang=Source_Lang, Target_Lang=Target_Lang)
+            db.session.add(New_TranslationMemory)
+            db.session.commit()
+        else:
+            TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).update({'Source':Source, 'Target':Target, 'Source_Lang':Source_Lang, 'Target_Lang':Target_Lang})
+            db.session.commit()
+        return jsonify({"result": "ok"})
+
 
 app.run(host="127.0.0.1", port=5000, threaded=True)
-
-#to do:
-#Prise en compte du comportement traducteur du User dans le back de docxproject
