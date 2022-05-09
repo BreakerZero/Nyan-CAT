@@ -1,0 +1,13 @@
+html2text~=2020.1.16
+Flask~=2.0.3
+SQLAlchemy~=1.4.32
+Werkzeug~=2.0.3
+requests~=2.27.1
+deepl~=1.5.0
+transformers~=4.17.0
+bs4~=0.0.1
+beautifulsoup4~=4.10.0
+numpy~=1.22.3
+datasets~=2.1.0
+safeIO~=1.2
+pyuseragents~=1.0.5

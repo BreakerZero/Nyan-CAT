@@ -4,8 +4,8 @@
 -4. Purger le fichier lors de la déco
 -5. Ajouter dynamiquement les segment traité lors de la session + ajouter à la bdd (vérifier que le segment n'existe pas déjà avant!)
 -6. Appeller minisearch lorsque l'un des bouton next/prev est appuyé et remplir htmltoshow avec si score suffisant (+ placement au bon endroit + bon placement du curseur)
-7. Remplacer le modèle IA de Nyan-CAT par le modèle plus entrainé
-8. Lors le l'ouverture d'un projet, créer un fichier csv (newsegments+idproject.csv) pour sauvegarder les nouveaux segments (les mêmes qui iront remplir la bdd)
-9. Lors de la déco/fermeture navigateur, prendre le(ou les) fichier(s) csv et entrainer le modèle IA de Nyan-CAT (dans un autre thread) (cf. testrain.py dans Geek-Compagnon)
+-7. Remplacer le modèle IA de Nyan-CAT par le modèle plus entrainé
++8. Lors le l'ouverture d'un projet, créer un fichier csv (newsegments+idproject.csv) pour sauvegarder les nouveaux segments (les mêmes qui iront remplir la bdd) (vérifier encodage et échappement des caractères spéciaux)
++9. Lors de la déco/fermeture navigateur, prendre le(ou les) fichier(s) csv et entrainer le modèle IA de Nyan-CAT (dans un autre thread) (cf. testrain.py dans Geek-Compagnon)
 10. Voir si il existe un moyen pour remplacer le type de balise par un autre en JS dans le keepstyle (cf. https://stackoverflow.com/questions/12984665/how-to-change-the-tag-name-of-an-element-in-javascript)
 11. Prise en compte du comportement traducteur du User dans le back de docxproject

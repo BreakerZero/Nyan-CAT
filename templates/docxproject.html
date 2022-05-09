@@ -193,6 +193,9 @@ async function getRessourceProject(block){
     getRessourceProject(document.getElementById('sectionnumber').value);
 </script>
 <script>
-
+var url = "/project/{{id}}/train";
+window.addEventListener("beforeunload", function (e) {
+    navigator.sendBeacon(url)
+});
 </script>
 {% endblock %}

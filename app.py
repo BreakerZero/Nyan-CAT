@@ -3,6 +3,7 @@ import json
 from operator import truediv
 import os
 import docx
+import csv
 from backend.converterAPI import ConverterAPI
 from enum import unique
 from re import template
@@ -15,6 +16,7 @@ import flask_sqlalchemy
 from werkzeug.datastructures import auth_property
 from werkzeug.utils import redirect, secure_filename
 from backend.translateAPI import TranslatorAPI
+from training.training import Training
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
 import html2text
@@ -238,8 +240,8 @@ def login():
             flash("Authentification impossible, vérifiez vos informations d'identification.")
             return redirect("/login")
         else:
-            path = "static/json/memory"+str(testpseudo.id)+".json"
-            jsonfile = open(path, "w", encoding="UTF-8")
+            jsonpath = "static/json/memory"+str(testpseudo.id)+".json"
+            jsonfile = open(jsonpath, "w", encoding="UTF-8")
             data = TranslationMemory.query.filter_by(Owner=int(testpseudo.id)).all()
             jsondata = []
             for i in data:
@@ -365,6 +367,11 @@ def newproject():
 def project(id):
     if str(flask_login.current_user.id) == str(Project.query.filter_by(id=id).first().Owner):
         if request.method == "GET":
+            #create csv file if not exist
+            if not os.path.isfile("static/csv/memory" + str(id) + ".csv"):
+                with open("static/csv/memory" + str(id) + ".csv", "w") as csvfile:
+                    writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+                    writer.writerow([str(Project.query.filter_by(id=id).first().Source_Lang)] + [str(Project.query.filter_by(id=id).first().Target_Lang)])
             type = str(Project.query.filter_by(id=id).first().Type)
             extension = str(Project.query.filter_by(id=id).first().Extension)
             last = str(Project.query.filter_by(id=id).first().Last_Block)
@@ -436,6 +443,8 @@ def project(id):
                         else: #Si le block n'existe pas dans le document de sortie
                             text = html2text.html2text(OriginalHtml)
                             translation = TranslatorAPI.translate(translator, translatorprovidersettings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
+                            translation = translation.replace("\n", "")
+                            print(repr(translation))
                             Html = '<p>' + translation + "</p>"
                             ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
                         Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
@@ -473,10 +482,37 @@ def addsegment():
             New_TranslationMemory = TranslationMemory(Owner=User_ID, Project=Project_ID, Segment=Segment_ID, Source=Source, Target=Target, Source_Lang=Source_Lang, Target_Lang=Target_Lang)
             db.session.add(New_TranslationMemory)
             db.session.commit()
+            if os.path.isfile("static/csv/memory" + str(Project_ID) + ".csv"):
+                with open("static/csv/memory" + str(Project_ID) + ".csv", "a+") as csvfile:
+                    writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+                    Source = Source.replace('\n', '')
+                    Target = Target.replace('\n', '')
+                    writer.writerow([Source, Target])
         else:
             TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).update({'Source':Source, 'Target':Target, 'Source_Lang':Source_Lang, 'Target_Lang':Target_Lang})
             db.session.commit()
+            if os.path.isfile("static/csv/memory" + str(Project_ID) + ".csv"):
+                with open("static/csv/memory" + str(Project_ID) + ".csv", "a+") as csvfile:
+                    writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+                    Source = Source.replace('\n', '')
+                    Target = Target.replace('\n', '')
+                    writer.writerow([Source, Target])
         return jsonify({"result": "ok"})
+
+@app.route("/project/<int:id>/train", methods=["POST"])
+@login_required
+def train(id):
+    if os.path.isfile("static/csv/memory" + str(id) + ".csv"):
+        with open("static/csv/memory" + str(id) + ".csv", "r") as csvfile:
+            reader = csv.reader(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            lines = len(list(reader))
+        if lines > 1:
+            Source_Lang = Project.query.filter_by(id=id).first().Source_Lang
+            Target_Lang = Project.query.filter_by(id=id).first().Target_Lang
+            #launch the training in new thread
+            thread = threading.Thread(target=Training, args=(id, Source_Lang, Target_Lang))
+            thread.start()
+    return jsonify({"result": "ok"})
 
 
 app.run(host="127.0.0.1", port=5000, threaded=True)
