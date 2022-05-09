@@ -13,8 +13,8 @@ pipeline {
 
     stage('Test') {
       steps {
-        sh "python3 pip install -r requirements.txt"
-        sh 'python3 jenkins.py'
+        sh "pip install -r requirements.txt"
+        sh 'jenkins.py'
         input(id: "Deploy Gate", message: "Deploy ${params.project_name}?", ok: 'Deploy')
       }
     }
