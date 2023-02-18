@@ -7,7 +7,7 @@ import requests
 import deepl
 
 
-class TranslatorAPI():
+class TranslatorAPI:
     def __init__(self, models_dir):
         self.models = {}
         self.models_dir = models_dir

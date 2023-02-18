@@ -198,9 +198,9 @@ class DeepL():
                     "user_preferred_langs": [destination_language]
                 },
                 "priority": priority,
-                "commonJobParams":{
+                "commonJobParams": {
                     "formality": formality,
-                    "termbase":{ "dictionary": dictionary}},
+                    "termbase": {"dictionary": dictionary}},
                 "timestamp": ts + (i_count - ts % i_count)
             }
             """Academy City\tAcademy City\nAccelerator\tAccelerator\nBagage City\tBagage City\nImagine Breaker\tImagine Breaker\nIndex\tIndex\nTouma\tTouma\nesper\tesper"""
