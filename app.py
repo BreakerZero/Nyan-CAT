@@ -13,10 +13,9 @@ from sqlalchemy.sql.elements import Null
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mysqldb import MySQL
 import flask_sqlalchemy
-from werkzeug.datastructures import auth_property
 from werkzeug.utils import redirect, secure_filename
 from backend.translateAPI import TranslatorAPI
-from training.training import Training
+from training import Training
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
 import html2text
@@ -31,7 +30,8 @@ app.config['DROPZONE_INVALID_FILE_TYPE'] = "L'extension de ce fichier de corresp
 app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database//nyan.db'  # Nom de la bdd
+file_path = os.path.abspath(os.getcwd())+"\database\\nyan.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(file_path)  # Nom de la bdd
 app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
 app.config['UPLOAD_FOLDER'] = "fileproject"
 app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt','.txt']  # extensions autorisées
@@ -110,8 +110,7 @@ class TranslationMemory(db.Model):  # Modèle mémoire de traduction
 def Glos():  # fonction formatage glossaire
     formatedGlo = ""
     i = 0
-    Gloquery = Glossary.query.order_by(Glossary.Source, Glossary.Target).with_entities(Glossary.Source,
-                                                                                       Glossary.Target).all()
+    Gloquery = Glossary.query.order_by(Glossary.Source, Glossary.Target).with_entities(Glossary.Source, Glossary.Target).all()
     if Gloquery is None:
         return formatedGlo
     else:
@@ -121,7 +120,8 @@ def Glos():  # fonction formatage glossaire
         return formatedGlo[:-1]
 
 
-formatedGlossary = Glos()
+with app.app_context():
+    formatedGlossary = Glos()
 
 @app.route('/', methods=["GET"])  # racine site
 def index():
