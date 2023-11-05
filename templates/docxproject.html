@@ -23,13 +23,13 @@
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Précédent</label>
-            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5"></textarea>
+            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5" disabled></textarea>
         </div>
     </div>
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Précédent</label>
-            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5"></textarea>
+            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5" disabled></textarea>
         </div>
     </div>
     <div class="column is-half">
@@ -47,13 +47,13 @@
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Suivant</label>
-            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5"></textarea>
+            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5" disabled></textarea>
         </div>
     </div>
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Suivant</label>
-            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5"></textarea>
+            <textarea class="textarea has-fixed-size" placeholder="Fixed size textarea" rows="5" disabled></textarea>
         </div>
     </div>
     <div class="control as-centered sectionpage">
@@ -154,6 +154,14 @@ async function getRessourceProject(block){
             var json = JSON.parse(translatedrequest.responseText);
             var htmlblock = json.result;
             document.getElementsByClassName("ql-editor")[1].innerHTML = htmlblock
+            var prevHtmlBlock = json.previous;
+            // Keep only text, not html
+            prevHtmlBlock = prevHtmlBlock.replace(/<[^>]*>?/gm, '');
+            document.getElementsByClassName('textarea')[1].value = prevHtmlBlock;
+            var nextHtmlBlock = json.next;
+            // Keep only text, not html
+            nextHtmlBlock = nextHtmlBlock.replace(/<[^>]*>?/gm, '');
+            document.getElementsByClassName('textarea')[3].value = nextHtmlBlock;
             {% if keepstyle %}
             document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres mais pas la balise ?
             {% endif %}
@@ -173,6 +181,16 @@ async function getRessourceProject(block){
             var json = JSON.parse(ressourcerequest.responseText);
             var htmlblock = json.result;
             document.getElementsByClassName("ql-editor")[0].innerHTML = htmlblock
+            // Mettre à jour le segment précédent
+            var prevHtmlBlock = json.previous;
+            // Keep only text, not html
+            prevHtmlBlock = prevHtmlBlock.replace(/<[^>]*>?/gm, '');
+            document.getElementsByClassName('textarea')[0].value = prevHtmlBlock;
+            // Mettre à jour le segment suivant
+            var nextHtmlBlock = json.next;
+            // Keep only text, not html
+            nextHtmlBlock = nextHtmlBlock.replace(/<[^>]*>?/gm, '');
+            document.getElementsByClassName('textarea')[2].value = nextHtmlBlock;
             var transtateddata = JSON.stringify({"translated": block , "previoustranslated": previousidblock,  "originaltext" : document.getElementsByClassName("ql-editor")[0].innerHTML, "translatedtext" : document.getElementsByClassName("ql-editor")[1].innerHTML });
             translatedrequest.send(transtateddata);
             mini = await SearchInMiniSearch(document.getElementsByClassName("ql-editor")[0].children[0].innerText, mini);

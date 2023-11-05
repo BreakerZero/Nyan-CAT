@@ -1,4 +1,5 @@
 import os
+from evaluate import load
 from datasets import load_dataset, load_metric
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, Seq2SeqTrainer
 import numpy as np
@@ -7,7 +8,7 @@ prefix = ""
 max_input_length = 128
 max_target_length = 128
 batch_size = 16
-metric = load_metric("sacrebleu")
+metric = load("sacrebleu")
 
 
 def preprocess_function(examples):

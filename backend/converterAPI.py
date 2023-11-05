@@ -37,6 +37,8 @@ class ConverterAPI:
     def ParaDocxToHtml(self, Docx: docx.document, ParaPosition: int):
         if ParaPosition >= len(Docx.paragraphs):
             return ""
+        if ParaPosition < 0:
+            return ""
         ParatoConvert = Docx.paragraphs[ParaPosition]
         style = ParatoConvert.style.name
         valclass = ""

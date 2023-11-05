@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
-from operator import truediv
 import os
 import docx
 import csv
 from backend.converterAPI import ConverterAPI
-from enum import unique
-from re import template
 from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort, Blueprint, Response
 import flask_login
 from sqlalchemy.sql.elements import Null
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mysqldb import MySQL
 import flask_sqlalchemy
 from werkzeug.utils import redirect, secure_filename
 from backend.translateAPI import TranslatorAPI
@@ -268,9 +264,10 @@ def signup():
         if testpseudo:
             flash("Ce nom d'utilisateur est déjà utilisé, choisissez-en un autre ou :")
             return redirect("/signup")
-        hashpassword = generate_password_hash(password, method="sha3_256")
+        hashpassword = generate_password_hash(password, method="scrypt")
 
-        new_user = User(Pseudo=pseudo, Mail=mail, Password=hashpassword, Status=0)
+        new_user = User(Pseudo=pseudo, Mail=mail, Password=hashpassword, Status=0, TranslatorSettings="More",
+                        TranslatorProvider="Nyan-Cat", ApiKey="None", KeepStyle=0, Autocomplete=0)
         # add the new user to the database
         db.session.add(new_user)
         db.session.commit()
@@ -410,7 +407,13 @@ def project(id):
                         idblock = int(request.json["ressource"])
                         OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
                         Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
-                        return jsonify({"result": Html})
+                        PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock-1)
+                        if PreviousHtml == "<p><br></p>":
+                            PreviousHtml = "<p></p>"
+                        NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock+1)
+                        if NextHtml == "<p><br></p>":
+                            NextHtml = "<p></p>"
+                        return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
                     elif "translated" in request.json: #Demande ressouce fichier traduit
                         idblock = int(request.json["translated"])
                         idpreviousblock = request.json["previoustranslated"]
@@ -450,7 +453,13 @@ def project(id):
                         Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
                         Project.query.filter_by(id=id).first().Last_Block = idblock
                         db.session.commit()
-                        return jsonify({"result": Html})
+                        PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock-1)
+                        if PreviousHtml == "<p><br></p>":
+                            PreviousHtml = "<p></p>"
+                        NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock+1)
+                        if NextHtml == "<p><br></p>":
+                            NextHtml = "<p></p>"
+                        return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
                 if extension == "txt":
                     return "txt"
                 if extension == "pdf":
