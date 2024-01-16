@@ -52,6 +52,49 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def verify_owner(project_id):
+    return str(flask_login.current_user.id) == str(Project.query.filter_by(id=project_id).first().Owner)
+
+
+def manage_csv_memory(project_id):
+    csv_path = f"static/csv/memory{project_id}.csv"
+    if not os.path.isfile(csv_path):
+        with open(csv_path, "w") as csvfile:
+            writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            project = Project.query.filter_by(id=project_id).first()
+            writer.writerow([project.Source_Lang, project.Target_Lang])
+
+def get_project_data_for_get_method(project_id):
+    project = Project.query.filter_by(id=project_id).first()
+    user = User.query.filter_by(id=flask_login.current_user.id).first()
+    return (
+        project.Type,
+        project.Extension,
+        project.Last_Block,
+        os.listdir(os.path.join(app.config['UPLOAD_FOLDER'], str(project_id))),
+        user.KeepStyle,
+        user.Autocomplete,
+        user.TranslatorSettings,
+        project
+    )
+
+def get_project_data_for_post_method(project_id):
+    project = Project.query.filter_by(id=project_id).first()
+    user = User.query.filter_by(id=flask_login.current_user.id).first()
+    return (
+        project.Type,
+        project.Extension,
+        project.Source_Lang,
+        project.Target_Lang,
+        user.TranslatorProvider,
+        user.TranslatorSettings,
+        user.Formality,
+        user.ApiKey
+    )
+
+
+
+
 class Glossary(db.Model):  # Modèle du glossaire
     id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
     Source_Lang = db.Column(db.Text, nullable=False)
@@ -362,118 +405,103 @@ def newproject():
 @app.route("/project/<int:id>", methods=["GET", "POST"])
 @login_required
 def project(id):
-    if str(flask_login.current_user.id) == str(Project.query.filter_by(id=id).first().Owner):
-        if request.method == "GET":
-            #create csv file if not exist
-            if not os.path.isfile("static/csv/memory" + str(id) + ".csv"):
-                with open("static/csv/memory" + str(id) + ".csv", "w") as csvfile:
-                    writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
-                    writer.writerow([str(Project.query.filter_by(id=id).first().Source_Lang)] + [str(Project.query.filter_by(id=id).first().Target_Lang)])
-            type = str(Project.query.filter_by(id=id).first().Type)
-            extension = str(Project.query.filter_by(id=id).first().Extension)
-            last = str(Project.query.filter_by(id=id).first().Last_Block)
-            files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-            keepstyle = bool(User.query.filter_by(id=flask_login.current_user.id).first().KeepStyle)
-            complete = bool(User.query.filter_by(id=flask_login.current_user.id).first().Autocomplete)
-            translatorsettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorSettings)
-            project = Project.query.filter_by(id=id).first()
-            if type == "Roman/Light Novel (Textuel)":
-                if extension == "docx":
-                    return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete, user=flask_login.current_user, project=project, translatorsettings=translatorsettings)
-                if extension == "txt":
-                    return "txt"
-                if extension == "pdf":
-                    return "pdf"
-            if type == "Manga/BD (Image)":
-                if extension == "png":
-                    return "png"
-                if extension == "jpg/jpeg":
-                    return "jpg"
-                if extension == "pdf":
-                    return "pdf"
-        if request.method == "POST":
-            type = str(Project.query.filter_by(id=id).first().Type)
-            extension = str(Project.query.filter_by(id=id).first().Extension)
-            source = str(Project.query.filter_by(id=id).first().Source_Lang)
-            target = str(Project.query.filter_by(id=id).first().Target_Lang)
-            translatorprovidersettings = str(User.query.filter_by(id=flask_login.current_user.id).first().TranslatorProvider)
-            formality = str(User.query.filter_by(id=flask_login.current_user.id).first().Formality)
-            apikey = str(User.query.filter_by(id=flask_login.current_user.id).first().ApiKey)
-            if type == "Roman/Light Novel (Textuel)":
-                if extension == "docx":
-                    files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-                    namefile = str(files[0])
-                    if "ressource" in request.json: #Demande ressouce fichier original
-                        idblock = int(request.json["ressource"])
-                        OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
-                        Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
-                        PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock-1)
-                        if PreviousHtml == "<p><br></p>":
-                            PreviousHtml = "<p></p>"
-                        NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock+1)
-                        if NextHtml == "<p><br></p>":
-                            NextHtml = "<p></p>"
-                        return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
-                    elif "translated" in request.json: #Demande ressouce fichier traduit
-                        idblock = int(request.json["translated"])
-                        idpreviousblock = request.json["previoustranslated"]
-                        OriginalHtml = str(request.json["originaltext"])
-                        TranslatedHtml = str(request.json["translatedtext"])
-                        if TranslatedHtml == "<p><br></p>":
-                            TranslatedHtml = "<p></p>"
-                        if len(files) == 1: #Création du fichier de sortie s'il n'existe pas
-                            TranslatedDocx = docx.Document()
-                            SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
-                            TranslatedDocx.save(SaveName)
-                        SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
-                        mutex = threading.Lock()
-                        mutex.acquire()
-                        while mutex.locked(): #pour gérer un grand nombre d'écriture fichier
-                            try:
-                                TranslatedDocx = docx.Document(SaveName)
-                            except:
-                                pass
-                            else:
-                                mutex.release()
-                        text = html2text.html2text(TranslatedHtml)
-                        if idblock < len(TranslatedDocx.paragraphs): #L'écriture du fichier de sortie s'écrivant au fur et à mesure
-                            if TranslatedDocx.paragraphs[idblock].text != text: #Si le text est différant on enregistre ce nouveau texte
-                                if idpreviousblock is not None:
-                                    ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
-                                Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-                            else:
-                                Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-                        else: #Si le block n'existe pas dans le document de sortie
-                            text = html2text.html2text(OriginalHtml)
-                            translation = TranslatorAPI.translate(translator, translatorprovidersettings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
-                            translation = translation.replace("\n", "")
-                            print(repr(translation))
-                            Html = '<p>' + translation + "</p>"
-                            ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
-                        Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
-                        Project.query.filter_by(id=id).first().Last_Block = idblock
-                        db.session.commit()
-                        PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock-1)
-                        if PreviousHtml == "<p><br></p>":
-                            PreviousHtml = "<p></p>"
-                        NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock+1)
-                        if NextHtml == "<p><br></p>":
-                            NextHtml = "<p></p>"
-                        return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
-                if extension == "txt":
-                    return "txt"
-                if extension == "pdf":
-                    return "pdf"
-            if type == "Manga/BD (Image)":
-                if extension == "png":
-                    return "png"
-                if extension == "jpg/jpeg":
-                    return "jpg"
-                if extension == "pdf":
-                    return "pdf"
-    else:
+    if not verify_owner(id):
         logout_user()
         return redirect('/')
+
+    if request.method == "GET":
+        #create csv file if not exist
+        manage_csv_memory(id)
+        #get project data
+        (type, extension, last, files, keepstyle, complete, translatorsettings, project) = get_project_data_for_get_method(id)
+        if type == "Roman/Light Novel (Textuel)":
+            if extension == "docx":
+                return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete, user=flask_login.current_user, project=project, translatorsettings=translatorsettings)
+            if extension == "txt":
+                return "txt"
+            if extension == "pdf":
+                return "pdf"
+        if type == "Manga/BD (Image)":
+            if extension == "png":
+                return "png"
+            if extension == "jpg/jpeg":
+                return "jpg"
+            if extension == "pdf":
+                return "pdf"
+    if request.method == "POST":
+        #get project data
+        (type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(id)
+        if type == "Roman/Light Novel (Textuel)":
+            if extension == "docx":
+                files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
+                namefile = str(files[0])
+                if "ressource" in request.json: #Demande ressouce fichier original
+                    idblock = int(request.json["ressource"])
+                    OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
+                    Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
+                    PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock-1)
+                    if PreviousHtml == "<p><br></p>":
+                        PreviousHtml = "<p></p>"
+                    NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock+1)
+                    if NextHtml == "<p><br></p>":
+                        NextHtml = "<p></p>"
+                    return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
+                elif "translated" in request.json: #Demande ressouce fichier traduit
+                    idblock = int(request.json["translated"])
+                    idpreviousblock = request.json["previoustranslated"]
+                    OriginalHtml = str(request.json["originaltext"])
+                    TranslatedHtml = str(request.json["translatedtext"])
+                    if TranslatedHtml == "<p><br></p>" or TranslatedHtml == "<p class=""><br></p>":
+                        TranslatedHtml = "<p></p>"
+                    SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
+                    if len(files) == 1: #Création du fichier de sortie s'il n'existe pas
+                        TranslatedDocx = docx.Document()
+                        TranslatedDocx.save(SaveName)
+                    mutex = threading.Lock()
+                    mutex.acquire()
+                    while mutex.locked(): #pour gérer un grand nombre d'écriture fichier
+                        try:
+                            TranslatedDocx = docx.Document(SaveName)
+                        except:
+                            pass
+                        else:
+                            mutex.release()
+                    text = html2text.html2text(TranslatedHtml)
+                    if idblock < len(TranslatedDocx.paragraphs): #L'écriture du fichier de sortie s'écrivant au fur et à mesure
+                        if TranslatedDocx.paragraphs[idblock].text != text: #Si le text est différent on enregistre ce nouveau texte
+                            if idpreviousblock is not None:
+                                ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
+                            Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                        else:
+                            Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                    else: #Si le block n'existe pas dans le document de sortie
+                        text = html2text.html2text(OriginalHtml)
+                        translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
+                        translation = translation.replace("\n", "")
+                        print(repr(translation))
+                        Html = '<p>' + translation + "</p>"
+                        ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
+                    Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
+                    Project.query.filter_by(id=id).first().Last_Block = idblock
+                    db.session.commit()
+                    PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock-1)
+                    if PreviousHtml == "<p><br></p>":
+                        PreviousHtml = "<p></p>"
+                    NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock+1)
+                    if NextHtml == "<p><br></p>":
+                        NextHtml = "<p></p>"
+                    return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
+            if extension == "txt":
+                return "txt"
+            if extension == "pdf":
+                return "pdf"
+        if type == "Manga/BD (Image)":
+            if extension == "png":
+                return "png"
+            if extension == "jpg/jpeg":
+                return "jpg"
+            if extension == "pdf":
+                return "pdf"
 
 @app.route("/addsegment", methods=['POST'])
 @login_required

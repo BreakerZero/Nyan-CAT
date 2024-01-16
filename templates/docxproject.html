@@ -169,7 +169,14 @@ async function getRessourceProject(block){
                 htmltoshow.textContent = "";
             }
             else {
+                {% if translatorsettings == "Less" %}
                 htmltoshow.style.display = "block";
+                {% endif %}
+                {% if translatorsettings == "More" %}
+                document.getElementsByClassName("ql-editor")[1].innerText = htmltoshow.textContent;
+                {% endif %}
+                {% if translatorsettings == "Disabled" %}
+                {% endif %}
             }
 
         }

@@ -29,7 +29,8 @@ class TranslatorAPI:
         self.models[route] = (model, tok)
         return 1, f"Successfully loaded model for {route} transation"
 
-    def translate(self, provider="Nyan-CAT", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGloassary=""):
+    def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGloassary=""):
+        print("settings", settings)
         if provider == "Nyan-CAT":  # fournisseur interne
             route = f'{source}-{target}'
             if not self.models.get(route):
