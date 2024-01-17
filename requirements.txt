@@ -10,7 +10,6 @@ numpy==1.26.2
 datasets==2.15.0
 safeIO~=1.2
 pyuseragents~=1.0.5
-jinja2==3.1.2
 torch==2.0.1+cu118
 tokenizers==0.15.0
 flask-login==0.6.3

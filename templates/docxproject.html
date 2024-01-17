@@ -37,11 +37,19 @@
             <label class="label">Segment Actuel</label>
             <div id="disablededitorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)" {% endif %} ></div>
         </div>
+        <div class="control">
+            <label class="label" id="ImageOriginalLabel" style="display:none;">Image Originale</label>
+            <canvas id="originalImageCanvas" style="display:none;"></canvas>
+        </div>
     </div>
     <div class="column is-half">
         <div class="control">
             <label class="label">Segment Actuel</label>
             <div id="editorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)"  {% endif %}></div>
+        </div>
+        <div class="control">
+            <label class="label" id="ImageTranslatedLabel" style="display:none;">Image Traduite</label>
+            <canvas id="translatedImageCanvas" style="display:none;"></canvas>
         </div>
     </div>
     <div class="column is-half">
@@ -67,6 +75,32 @@
 <script src="{{ url_for('static', filename='js/inputFilter.js') }}" type="application/javascript"></script>
 <script src="{{ url_for('static', filename='js/createEditor.js') }}" type="application/javascript"></script>
 {% if complete %}<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>{% endif %}
+<script>
+function checkForImageInOriginalEditor() {
+    var editorContent = document.getElementsByClassName("ql-editor")[0];
+    var images = editorContent.getElementsByTagName('img');
+    return images.length > 0 ? images[0] : null;
+}
+
+function loadCanvasWithImage(imgElement) {
+    var canvas = document.getElementById("originalImageCanvas");
+    var ctx = canvas.getContext("2d");
+
+    // Charger l'image dans le canvas
+    var image = new Image();
+    image.onload = function() {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0);
+    };
+    image.src = imgElement.src;
+
+    // Rendre le canvas visible
+    canvas.style.display = "block";
+}
+
+
+</script>
 <script>
 var previousidblock = null
 var mini = null
@@ -188,6 +222,18 @@ async function getRessourceProject(block){
             var json = JSON.parse(ressourcerequest.responseText);
             var htmlblock = json.result;
             document.getElementsByClassName("ql-editor")[0].innerHTML = htmlblock
+            var imgElement = checkForImageInOriginalEditor();
+            if (imgElement) {
+                loadCanvasWithImage(imgElement);
+                document.getElementById("originalImageCanvas").style.display = "block";
+                document.getElementById("ImageOriginalLabel").style.display = "block";
+                document.getElementById("ImageTranslatedLabel").style.display = "block";
+                document.getElementById("originalImageCanvas").style.width = document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().width + "px";
+            } else {
+                document.getElementById("ImageOriginalLabel").style.display = "none";
+                document.getElementById("ImageTranslatedLabel").style.display = "none";
+                document.getElementById("originalImageCanvas").style.display = "none";
+            }
             // Mettre à jour le segment précédent
             var prevHtmlBlock = json.previous;
             // Keep only text, not html

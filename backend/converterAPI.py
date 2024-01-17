@@ -92,7 +92,6 @@ class ConverterAPI:
             images = soup.find_all('img')
             if len(images) > 0:
                 img = images[0]
-                # Supposons que le src de l'img est en base64.
                 img_data = img['src'].split('base64,')[-1]
                 self.insert_image_from_base64(Docx, img_data, ParaPosition, imgisbefore)
             Docx.save(SaveName)
