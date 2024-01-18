@@ -51,6 +51,9 @@
             <label class="label" id="ImageTranslatedLabel" style="display:none;">Image Traduite</label>
             <canvas id="translatedImageCanvas" style="display:none;"></canvas>
         </div>
+        <div class="control">
+            <button class="button is-family-secondary" style="display:none" id="ValidationModifiedImgButton">Sauvegarder Modifications</button>
+        </div>
     </div>
     <div class="column is-half">
         <div class="control">
@@ -76,14 +79,13 @@
 <script src="{{ url_for('static', filename='js/createEditor.js') }}" type="application/javascript"></script>
 {% if complete %}<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>{% endif %}
 <script>
-function checkForImageInOriginalEditor() {
-    var editorContent = document.getElementsByClassName("ql-editor")[0];
-    var images = editorContent.getElementsByTagName('img');
+function checkForImageInEditor(editorElement) {
+    var images = editorElement.getElementsByTagName('img');
     return images.length > 0 ? images[0] : null;
 }
 
-function loadCanvasWithImage(imgElement) {
-    var canvas = document.getElementById("originalImageCanvas");
+function loadCanvasWithImage(imgElement, canvasId) {
+    var canvas = document.getElementById(canvasId.id);
     var ctx = canvas.getContext("2d");
 
     // Charger l'image dans le canvas
@@ -212,6 +214,21 @@ async function getRessourceProject(block){
                 {% if translatorsettings == "Disabled" %}
                 {% endif %}
             }
+            var imgElementTranslated = checkForImageInEditor(document.getElementsByClassName("ql-editor")[1]);
+            var imgElementOriginal = checkForImageInEditor(document.getElementsByClassName("ql-editor")[0]);
+            document.getElementById("translatedImageCanvas").style.display = "none";
+            document.getElementById("ValidationModifiedImgButton").style.display = "none";
+            if (imgElementTranslated) {
+                loadCanvasWithImage(imgElementTranslated, document.getElementById("translatedImageCanvas"));
+                document.getElementById("translatedImageCanvas").style.display = "block";
+                document.getElementById("ValidationModifiedImgButton").style.display = "block";
+                document.getElementById("ValidationModifiedImgButton").style.margin="auto";
+                document.getElementById("ValidationModifiedImgButton").style.marginTop="10px";
+            }
+            if (imgElementOriginal && !imgElementTranslated) {
+                loadCanvasWithImage(imgElementOriginal, document.getElementById("translatedImageCanvas"));
+            }
+            document.getElementById("translatedImageCanvas").style.width = document.getElementsByClassName("ql-editor")[1].getBoundingClientRect().width + "px";
 
         }
     };
@@ -222,9 +239,9 @@ async function getRessourceProject(block){
             var json = JSON.parse(ressourcerequest.responseText);
             var htmlblock = json.result;
             document.getElementsByClassName("ql-editor")[0].innerHTML = htmlblock
-            var imgElement = checkForImageInOriginalEditor();
-            if (imgElement) {
-                loadCanvasWithImage(imgElement);
+            var imgElementOriginal = checkForImageInEditor(document.getElementsByClassName("ql-editor")[0]);
+            if (imgElementOriginal) {
+                loadCanvasWithImage(imgElementOriginal, document.getElementById("originalImageCanvas"));
                 document.getElementById("originalImageCanvas").style.display = "block";
                 document.getElementById("ImageOriginalLabel").style.display = "block";
                 document.getElementById("ImageTranslatedLabel").style.display = "block";
