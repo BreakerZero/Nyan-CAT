@@ -19,7 +19,7 @@ htmltoshow.addEventListener("mouseup", function(e){
 function autocompletescript(event){
     lastsection = document.getElementsByClassName("ql-editor")[1].children.length;
     wordinsection = document.getElementsByClassName("ql-editor")[1].children[lastsection -1].textContent.split(/(\s+)/).filter( function(e) { return e.trim().length > 0; });
-    l= document.getElementsByClassName("ql-editor")[1].children[lastsection -1].textContent.length;
+    l = document.getElementsByClassName("ql-editor")[1].children[lastsection -1].textContent.length;
     lastcar=document.getElementsByClassName("ql-editor")[1].children[lastsection -1].textContent[l-1];
     lenghtofstyle = document.getElementsByClassName("ql-editor")[1].children[lastsection -1].children.length
     var text = document.getElementsByClassName("ql-editor")[1].children[lastsection -1].childNodes[0];
@@ -178,8 +178,7 @@ function clear(event) {
     }
 }
 
-function lastrecurelement(t)
-{
+function lastrecurelement(t) {
     if (t.lastChild.lastChild === t.lastChild.lastElementChild)
     {
         while(t != null)

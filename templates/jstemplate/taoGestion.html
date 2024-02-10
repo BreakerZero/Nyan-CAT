@@ -1,0 +1,253 @@
+<script>
+var previousidblock = null
+var mini = null
+
+function initializeAutocompleterDisplay() {
+    if (document.getElementById("autocompleter") === null) {
+        document.body.appendChild(htmltoshow); // Assurez-vous que `htmltoshow` est défini correctement
+    }
+}
+function isResultRelevant(results, textToSearch) {
+    return results.length > 0 && results[0].score > textToSearch.length;
+}
+function displaySearchResult(result) {
+    htmltoshow.style.display = "none";
+    htmltoshow.textContent = result.Target;
+    positionResultDisplay();
+}
+function positionResultDisplay() {
+    const editorChild = document.getElementsByClassName("ql-editor")[1].children[0];
+    htmltoshow.style.left = -(document.body.getBoundingClientRect().left - editorChild.getBoundingClientRect().left) + "px";
+    htmltoshow.style.top = -(document.body.getBoundingClientRect().top - editorChild.getBoundingClientRect().top) + "px";
+}
+function placeTranslatedTextinEditor(block, translatedrequest){
+    previousidblock = block
+    var json = translatedrequest;
+    var htmlblock = json.result;
+    document.getElementsByClassName("ql-editor")[1].innerHTML = htmlblock
+    var prevHtmlBlock = json.previous;
+    // Keep only text, not html
+    prevHtmlBlock = prevHtmlBlock.replace(/<[^>]*>?/gm, '');
+    document.getElementsByClassName('textarea')[1].value = prevHtmlBlock;
+    var nextHtmlBlock = json.next;
+    // Keep only text, not html
+    nextHtmlBlock = nextHtmlBlock.replace(/<[^>]*>?/gm, '');
+    document.getElementsByClassName('textarea')[3].value = nextHtmlBlock;
+    {% if keepstyle %}
+        document.getElementsByClassName("ql-editor")[1].children[0].className = document.getElementsByClassName("ql-editor")[0].children[0].className //ligne pour keepstyle sur la page paramètres mais pas la balise ?
+    {% endif %}  
+}
+function translatorSettingGestion(){
+    {% if translatorsettings == "Less" %}
+    htmltoshow.style.display = "block";
+    {% endif %}
+    {% if translatorsettings == "More" %}
+    document.getElementsByClassName("ql-editor")[1].innerText = htmltoshow.textContent;
+    {% endif %}
+    {% if translatorsettings == "Disabled" %}
+    {% endif %}
+}
+function hideTranslatedCanvas(){
+    document.getElementById("translatedImageCanvas").style.display = "none";
+    document.getElementById("ValidationModifiedImgButton").style.display = "none";
+}
+function showTranslatedCanvas() {
+    document.getElementById("translatedImageCanvas").style.display = "block";
+    document.getElementById("ValidationModifiedImgButton").style.display = "block";
+    document.getElementById("ValidationModifiedImgButton").style.margin = "auto";
+    document.getElementById("ValidationModifiedImgButton").style.marginTop = "10px";
+}
+function placeOriginalTextinEditor(ressourcerequest){
+    var json = ressourcerequest;
+    var htmlblock = json.result;
+    document.getElementsByClassName("ql-editor")[0].innerHTML = htmlblock
+    // Mettre à jour le segment précédent
+    var prevHtmlBlock = json.previous;
+    // Keep only text, not html
+    prevHtmlBlock = prevHtmlBlock.replace(/<[^>]*>?/gm, '');
+    document.getElementsByClassName('textarea')[0].value = prevHtmlBlock;
+    // Mettre à jour le segment suivant
+    var nextHtmlBlock = json.next;
+    // Keep only text, not html
+    nextHtmlBlock = nextHtmlBlock.replace(/<[^>]*>?/gm, '');
+    document.getElementsByClassName('textarea')[2].value = nextHtmlBlock;
+}
+function showOriginalCanvas() {
+    document.getElementById("originalImageCanvas").style.display = "block";
+    document.getElementById("ImageOriginalLabel").style.display = "block";
+    document.getElementById("ImageTranslatedLabel").style.display = "block";
+    document.getElementById("originalImageCanvas").style.width = document.getElementsByClassName("ql-editor")[0].getBoundingClientRect().width + "px";
+}
+function hideOriginalCanvas() {
+    document.getElementById("ImageOriginalLabel").style.display = "none";
+    document.getElementById("ImageTranslatedLabel").style.display = "none";
+    document.getElementById("originalImageCanvas").style.display = "none";
+}
+function manageCanvasDisplay() {
+    // Logique pour afficher/cacher et charger les images dans les canvas
+    const imgElementTranslated = checkForImageInEditor(document.getElementsByClassName("ql-editor")[1]);
+    const imgElementOriginal = checkForImageInEditor(document.getElementsByClassName("ql-editor")[0]);
+
+    hideTranslatedCanvas();
+    if (imgElementTranslated) {
+        loadCanvasWithImage(imgElementTranslated, "translatedImageCanvas");
+        showTranslatedCanvas();
+    } else if (imgElementOriginal) {
+        loadCanvasWithImage(imgElementOriginal, "translatedImageCanvas");
+    }
+
+    adjustCanvasWidth("translatedImageCanvas", document.getElementsByClassName("ql-editor")[1]);
+    hideOriginalCanvas();
+    if (imgElementOriginal) {
+        loadCanvasWithImage(imgElementOriginal, "originalImageCanvas");
+        showOriginalCanvas();
+    }
+    adjustCanvasWidth("originalImageCanvas", document.getElementsByClassName("ql-editor")[0]);
+}
+function adjustCanvasWidth(canvasId, referenceElement) {
+    const canvas = document.getElementById(canvasId);
+    if (canvas && referenceElement) {
+        canvas.style.width = referenceElement.getBoundingClientRect().width + "px";
+    }
+}
+async function AddCurrentSegment(miniSearch) {
+    if (!miniSearch) {
+        miniSearch = await CreateMiniSearch();
+        if (!miniSearch) return; // Gère l'échec de la création de miniSearch
+    }
+
+    const editorText = document.getElementsByClassName("ql-editor")[0].innerText;
+    const translatedText = document.getElementsByClassName("ql-editor")[1].innerText;
+    const resultFromMemory = miniSearch.search(editorText);
+
+    // Condition pour envoyer le segment
+    if (resultFromMemory.length > 0 && editorText !== resultFromMemory[0].Source && translatedText !== "\n") {
+        // Ajoute le segment actuel à miniSearch pour éviter les répétitions
+        miniSearch.add({
+            id: miniSearch.length + 1,
+            Source_Lang: "{{ project.Source_Lang }}",
+            Target_Lang: "{{ project.Target_Lang }}",
+            Source: editorText,
+            Target: translatedText
+        });
+
+        // Prépare les données à envoyer
+        const segmentData = {
+            Source_Lang: "{{ project.Source_Lang }}",
+            Target_Lang: "{{ project.Target_Lang }}",
+            Source: editorText,
+            Target: translatedText,
+            User_ID: "{{ current_user.id }}",
+            Project_ID: "{{ project.id }}",
+            Segment_ID: previousidblock
+        };
+
+        // Utilise fetch pour envoyer les données
+        try {
+            const response = await fetch("{{ url_for('addsegment') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(segmentData)
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+            // Traite la réponse si nécessaire
+        } catch (error) {
+            console.error('Error adding current segment:', error);
+        }
+    }
+}
+async function CreateMiniSearch() {
+    const stopWords = new Set([
+        'and', 'or', 'to', 'in', 'a', 'the', "I", "you", "he", "she", "is", "are", 
+        "have", "has", "it", "for", "not", "on", "with", "this", "by", "if", "an", 
+        "at", "so", "of", "one", "into", "any", "who", "its", "that", "up", "down"
+    ]);
+
+    try {
+        const response = await fetch("{{ url_for('static', filename='json/memory' + user.id|string + '.json') }}");
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const jsonData = await response.json();
+        const miniSearch = new MiniSearch({
+            fields: ['id', 'Source_Lang', 'Target_Lang', 'Source', 'Target'],
+            storeFields: ['Source', 'Target'],
+            processTerm: (term, _fieldName) => stopWords.has(term) ? null : term.toLowerCase()
+        });
+
+        miniSearch.addAll(jsonData);
+        return miniSearch;
+    } catch (error) {
+        console.error('Error fetching MiniSearch data:', error);
+        return null;
+    }
+}
+async function SearchInMiniSearch(textToSearch, miniSearch) {
+    // S'assurer que miniSearch est initialisé
+    if (!miniSearch) {
+        miniSearch = await CreateMiniSearch();
+        if (!miniSearch) return; // Gérer l'échec de la création de miniSearch
+    }
+
+    // Rechercher le texte dans miniSearch
+    const resultFromMemory = miniSearch.search(textToSearch);
+
+    // Initialiser l'affichage des résultats, si nécessaire
+    initializeAutocompleterDisplay();
+
+    // Afficher le résultat si pertinent
+    if (isResultRelevant(resultFromMemory, textToSearch)) {
+        displaySearchResult(resultFromMemory[0]);
+    }
+}
+async function getRessourceProject(block) {
+    const url = "/project/{{id}}";
+    try {
+        await AddCurrentSegment(mini); // Assure-toi que `mini` est défini correctement
+
+        // Requête pour obtenir la ressource projet
+        const resourceData = { "ressource": block };
+        const resourceResponse = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(resourceData)
+        });
+
+        if (!resourceResponse.ok) throw new Error('Network response was not ok for resource request');
+        
+        const resourceResponseData = await resourceResponse.json();
+        placeOriginalTextinEditor(resourceResponseData);
+
+        // Envoie des données traduites, si nécessaire
+        await sendTranslatedData(block);
+
+        manageCanvasDisplay();
+    } catch (error) {
+        console.error('Error in getRessourceProject:', error);
+    }
+}
+async function sendTranslatedData(block) {
+    const url = "/project/{{id}}";
+    const translatedData = {
+        "translated": block,
+        "previoustranslated": previousidblock,
+        "originaltext": document.getElementsByClassName("ql-editor")[0].innerHTML,
+        "translatedtext": document.getElementsByClassName("ql-editor")[1].innerHTML
+    };
+
+    try {
+        const translatedResponse = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(translatedData)
+        });
+
+        if (!translatedResponse.ok) throw new Error('Network response was not ok for translated data');
+        
+        const translatedResponseData = await translatedResponse.json();
+        placeTranslatedTextinEditor(block, translatedResponseData);
+    } catch (error) {
+        console.error('Error sending translated data:', error);
+    }
+}
+</script>
