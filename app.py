@@ -393,6 +393,10 @@ def newproject():
             if file_ext not in app.config['UPLOAD_EXTENSIONS']:
                 abort(400)
             up_file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + idproject, up_file.filename))
+        if type == "Roman/Light Novel (Textuel)":
+            type = "text"
+        elif type == "Manga/BD (Image)":
+            type = "image"
         new_project = Project(id=int(idproject), Name=name, Type=type, Owner=current_owner, Extension=format,
                               Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0)
         db.session.add(new_project)
@@ -402,106 +406,113 @@ def newproject():
         return render_template('newproject.html')
 
 
-@app.route("/project/<int:id>", methods=["GET", "POST"])
+def docx_get_ressource_in_request(request, id, namefile):
+    idblock = int(request.json["ressource"])
+    OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
+    Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
+    PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock - 1)
+    if PreviousHtml == "<p><br></p>":
+        PreviousHtml = "<p></p>"
+    NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock + 1)
+    if NextHtml == "<p><br></p>":
+        NextHtml = "<p></p>"
+    return Html, PreviousHtml, NextHtml
+
+
+@app.route("/project/text/docx/<int:id>", methods=["GET", "POST"])
 @login_required
-def project(id):
+def projecttextdocx(id):
     if not verify_owner(id):
         logout_user()
         return redirect('/')
-
     if request.method == "GET":
         #create csv file if not exist
         manage_csv_memory(id)
         #get project data
         (type, extension, last, files, keepstyle, complete, translatorsettings, project) = get_project_data_for_get_method(id)
-        if type == "Roman/Light Novel (Textuel)":
-            if extension == "docx":
-                return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete, user=flask_login.current_user, project=project, translatorsettings=translatorsettings)
-            if extension == "txt":
-                return "txt"
-            if extension == "pdf":
-                return "pdf"
-        if type == "Manga/BD (Image)":
-            if extension == "png":
-                return "png"
-            if extension == "jpg/jpeg":
-                return "jpg"
-            if extension == "pdf":
-                return "pdf"
+        if extension == "docx":
+            return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete, user=flask_login.current_user, project=project, translatorsettings=translatorsettings, extension=extension, type=type)
+        else:
+            return render_template('404.html'), 404
     if request.method == "POST":
         #get project data
         (type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(id)
-        if type == "Roman/Light Novel (Textuel)":
-            if extension == "docx":
-                files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-                namefile = str(files[0])
-                if "ressource" in request.json: #Demande ressouce fichier original
-                    idblock = int(request.json["ressource"])
-                    OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
-                    Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
-                    PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock-1)
-                    if PreviousHtml == "<p><br></p>":
-                        PreviousHtml = "<p></p>"
-                    NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock+1)
-                    if NextHtml == "<p><br></p>":
-                        NextHtml = "<p></p>"
-                    return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
-                elif "translated" in request.json: #Demande ressouce fichier traduit
-                    idblock = int(request.json["translated"])
-                    idpreviousblock = request.json["previoustranslated"]
-                    OriginalHtml = str(request.json["originaltext"])
-                    TranslatedHtml = str(request.json["translatedtext"])
-                    if TranslatedHtml == "<p><br></p>" or TranslatedHtml == "<p class=""><br></p>":
-                        TranslatedHtml = "<p></p>"
-                    SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
-                    if len(files) == 1: #Création du fichier de sortie s'il n'existe pas
-                        TranslatedDocx = docx.Document()
-                        TranslatedDocx.save(SaveName)
-                    mutex = threading.Lock()
-                    mutex.acquire()
-                    while mutex.locked(): #pour gérer un grand nombre d'écriture fichier
-                        try:
-                            TranslatedDocx = docx.Document(SaveName)
-                        except:
-                            pass
-                        else:
-                            mutex.release()
-                    text = html2text.html2text(TranslatedHtml)
-                    if idblock < len(TranslatedDocx.paragraphs): #L'écriture du fichier de sortie s'écrivant au fur et à mesure
-                        if TranslatedDocx.paragraphs[idblock].text != text: #Si le text est différent on enregistre ce nouveau texte
-                            if idpreviousblock is not None:
-                                ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
-                            Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-                        else:
-                            Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-                    else: #Si le block n'existe pas dans le document de sortie
-                        text = html2text.html2text(OriginalHtml)
-                        translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
-                        translation = translation.replace("\n", "")
-                        print(repr(translation))
-                        Html = '<p>' + translation + "</p>"
-                        ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
-                    Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
-                    Project.query.filter_by(id=id).first().Last_Block = idblock
-                    db.session.commit()
-                    PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock-1)
-                    if PreviousHtml == "<p><br></p>":
-                        PreviousHtml = "<p></p>"
-                    NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock+1)
-                    if NextHtml == "<p><br></p>":
-                        NextHtml = "<p></p>"
-                    return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
-            if extension == "txt":
-                return "txt"
-            if extension == "pdf":
-                return "pdf"
-        if type == "Manga/BD (Image)":
-            if extension == "png":
-                return "png"
-            if extension == "jpg/jpeg":
-                return "jpg"
-            if extension == "pdf":
-                return "pdf"
+        if extension == "docx":
+            files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
+            namefile = str(files[0])
+            if "ressource" in request.json: #Demande ressouce fichier original
+                Html, PreviousHtml, NextHtml = docx_get_ressource_in_request(request, id, namefile)
+                return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
+            elif "translated" in request.json: #Demande ressouce fichier traduit
+                idblock = int(request.json["translated"])
+                idpreviousblock = request.json["previoustranslated"]
+                OriginalHtml = str(request.json["originaltext"])
+                TranslatedHtml = str(request.json["translatedtext"])
+                if TranslatedHtml == "<p><br></p>" or TranslatedHtml == "<p class=""><br></p>":
+                    TranslatedHtml = "<p></p>"
+                SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
+                if len(files) == 1: #Création du fichier de sortie s'il n'existe pas
+                    TranslatedDocx = docx.Document()
+                    TranslatedDocx.save(SaveName)
+                mutex = threading.Lock()
+                mutex.acquire()
+                while mutex.locked(): #pour gérer un grand nombre d'écriture fichier
+                    try:
+                        TranslatedDocx = docx.Document(SaveName)
+                    except:
+                        pass
+                    else:
+                        mutex.release()
+                text = html2text.html2text(TranslatedHtml)
+                if idblock < len(TranslatedDocx.paragraphs): #L'écriture du fichier de sortie s'écrivant au fur et à mesure
+                    if TranslatedDocx.paragraphs[idblock].text != text: #Si le text est différent on enregistre ce nouveau texte
+                        if idpreviousblock is not None:
+                            ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
+                        Html= ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                    else:
+                        Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+                else: #Si le block n'existe pas dans le document de sortie
+                    text = html2text.html2text(OriginalHtml)
+                    translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary) #on tente une traduction si on a rien dans la mémoire de traduction
+                    translation = translation.replace("\n", "")
+                    print(repr(translation))
+                    Html = '<p>' + translation + "</p>"
+                    ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
+                Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
+                Project.query.filter_by(id=id).first().Last_Block = idblock
+                db.session.commit()
+                PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock-1)
+                if PreviousHtml == "<p><br></p>":
+                    PreviousHtml = "<p></p>"
+                NextHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock+1)
+                if NextHtml == "<p><br></p>":
+                    NextHtml = "<p></p>"
+                return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
+
+@app.route("/project/text/txt/<int:id>", methods=["GET", "POST"])
+@login_required
+def projecttexttxt(id):
+    return "not implemented yet"
+
+@app.route("/project/text/pdf/<int:id>", methods=["GET", "POST"])
+@login_required
+def projecttextpdf(id):
+    return "not implemented yet"
+
+@app.route("/project/image/png/<int:id>", methods=["GET", "POST"])
+@login_required
+def projectimagepng(id):
+    return "not implemented yet"
+
+@app.route("/project/image/jpg/<int:id>", methods=["GET", "POST"])
+@login_required
+def projectimagejpg(id):
+    return "not implemented yet"
+
+@app.route("/project/image/pdf/<int:id>", methods=["GET", "POST"])
+@login_required
+def projectimagepdf(id):
+    return "not implemented yet"
 
 @app.route("/addsegment", methods=['POST'])
 @login_required

@@ -201,7 +201,7 @@ async function SearchInMiniSearch(textToSearch, miniSearch) {
     }
 }
 async function getRessourceProject(block) {
-    const url = "/project/{{id}}";
+    const url = "/project/{{ type }}/{{ extension }}/{{id}}";
     try {
         await AddCurrentSegment(mini); // Assure-toi que `mini` est défini correctement
 
@@ -227,7 +227,7 @@ async function getRessourceProject(block) {
     }
 }
 async function sendTranslatedData(block) {
-    const url = "/project/{{id}}";
+    const url = "/project/{{ type }}/{{ extension }}/{{id}}";
     const translatedData = {
         "translated": block,
         "previoustranslated": previousidblock,

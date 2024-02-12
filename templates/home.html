@@ -9,28 +9,28 @@
       <div class="container">
         <div class="columns is-multiline is-fullheight is-fullwidth is-centered">
           {% if Projectlist %}
-            {% for tiles in Projectlist %}
+            {% for project in Projectlist %}
             <div class="column toaster is-narrow">
-              <a href="{{ url_for('project', id = tiles.id ) }}">
+              {% set project_url = url_for('project' + project.Type + project.Extension, id=project.id) %}
+              <a href="{{ project_url }}">
                 <span class="icon is-large is-left">
-                  {% if tiles.Extension == "docx" %}
+                  {% if project.Extension == "docx" %}
                   <i class="fas fa-4x fa-file-word inline-flex"></i>
-                  {% elif tiles.Extension == "txt" %}
+                  {% elif project.Extension == "txt" %}
                   <i class="fas fa-4x fa-file-alt inline-flex"></i>
-                  {% elif tiles.Extension == "pdf" %}
+                  {% elif project.Extension == "pdf" %}
                   <i class="fas fa-4x fa-file-pdf inline-flex"></i>
                   {% else %}
                   <i class="fas fa-4x fas fa-file-image inline-flex"></i>
                   {% endif %}
                 </span>
-              <p style="font-size: 1.5em;">{{ tiles.Name }}</p>
-              <p>{{ tiles.Source_Lang }}-{{ tiles.Target_Lang }}</p>
-              <p><progress class="progress is-small is-primary" value = "{{ tiles.Advancement }}" max = "100"></p>
-            </a>
+                <p style="font-size: 1.5em;">{{ project.Name }}</p>
+                <p>{{ project.Source_Lang }}-{{ project.Target_Lang }}</p>
+                <p><progress class="progress is-small is-primary" value="{{ project.Advancement }}" max="100"></progress></p>
+              </a>
             </div>
             {% endfor %}
           {% endif %}
-        </div>
         </div>
       </div>
       </section>

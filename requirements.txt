@@ -1,6 +1,6 @@
 html2text~=2020.1.16
-Flask==3.0.0
-SQLAlchemy==2.0.23
+Flask==3.0.2
+SQLAlchemy==2.0.26
 Werkzeug~=3.0.1
 requests==2.31.0
 deepl==1.16.1
@@ -13,7 +13,7 @@ pyuseragents~=1.0.5
 torch==2.0.1+cu118
 tokenizers==0.15.0
 flask-login==0.6.3
-evaluate
+evaluate==0.4.1
 tensorflow-intel==2.15.0
 keras==3.0.1
 jinja2==3.1.3
