@@ -10666,3 +10666,20 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   background-color: #fafafa;
   padding: 3rem 1.5rem 6rem;
 }
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toolbar .right-align {
+    display: flex;
+    align-items: center;
+    border-left: 1px solid white;
+    padding-left: 10px;
+}
+
+.hidden {
+    display: none;
+}

@@ -19,18 +19,14 @@ class TranslatorAPI:
     def load_model(self, route):
         global model
         global tok
-        model = f'opus-mt-{route}'
+        model = f'temp-mt-{route}'
         path = os.path.join(self.models_dir, model)
-        try:  # on vérifie que le bon modèle Helsinki est bien là
-            model = MarianMTModel.from_pretrained(path)
-            tok = MarianTokenizer.from_pretrained(path)
-        except:
-            return 0, f"Make sure you have downloaded model for {route} translation"
+        model = MarianMTModel.from_pretrained(path)
+        tok = MarianTokenizer.from_pretrained(path)
         self.models[route] = (model, tok)
         return 1, f"Successfully loaded model for {route} transation"
 
     def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGloassary=""):
-        print("settings", settings)
         if provider == "Nyan-CAT":  # fournisseur interne
             route = f'{source}-{target}'
             if not self.models.get(route):
