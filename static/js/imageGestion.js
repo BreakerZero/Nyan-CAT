@@ -35,9 +35,9 @@ function saveState() {
 }
 
 function restoreState() {
-    if (imageHistory.length > 1) {
-        imageHistory.pop();
+    if (imageHistory.length > 0) {
         const imgData = imageHistory[imageHistory.length - 1];
+        imageHistory.pop();
         const img = new Image();
         img.src = imgData;
         img.onload = () => {
