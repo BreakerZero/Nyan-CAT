@@ -37,7 +37,7 @@
         <div class="column is-half">
             <div class="control">
                 <label class="label">Segment Actuel</label>
-                <div id="disablededitorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)" {% endif %}></div>
+                <div id="disablededitorjs" {% if complete %} oninput="autocompletescript(event)" onkeypress="clear(event)" {% endif %}></div>
             </div>
             <div class="control">
                 <label class="label" id="ImageOriginalLabel" style="display:none;">Image Originale</label>
@@ -53,13 +53,14 @@
                 <label class="label" id="ImageTranslatedLabel" style="display:none;">Image Traduite</label>
                 <div id="image-toolbar" class="toolbar ql-toolbar ql-snow" style="display:none;">
                     <button id="cloneStampButton" class="button is-small"><i class="fas fa-clone"></i></button>
-                    <div id="diameterControls" class="hidden">
+                    <div id="diameterControls" class="hidden right-align">
                         <label for="diameterRange" style="border-left: 1px solid white;">Diamètre:</label>
                         <input type="range" id="diameterRange" min="5" max="50" value="15">
                         <span id="diameterValue">15</span>
                     </div>
                 </div>
                 <canvas id="translatedImageCanvas" style="display:none;"></canvas>
+                <div id="cloneCursor" class="clone-cursor"></div>
             </div>
             <div class="control">
                 <button class="button is-family-secondary" id="undoButton" style="display:none">Annuler</button>
@@ -90,7 +91,7 @@
 <script src="{{ url_for('static', filename='js/createEditor.js') }}" type="application/javascript"></script>
 {% if complete %}<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>{% endif %}
 <script src="{{ url_for('static', filename='js/imageGestion.js') }}" type="application/javascript"></script>
-{% include 'jstemplate/taoGestion.html' %}    
+{% include 'jstemplate/taoGestion.html' %}
 <script src="{{ url_for('static', filename='js/lastSectionGestion.js') }}" type="application/javascript"></script>
 <script src="{{ url_for('static', filename='js/trainBeforeUnload.js') }}" type="application/javascript"></script>
 {% endblock %}

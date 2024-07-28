@@ -20,6 +20,7 @@ function loadCanvasWithImage(imgElement, canvasId) {
 
 const canvas = document.getElementById('translatedImageCanvas');
 const ctx = canvas.getContext('2d');
+const cloneCursor = document.getElementById('cloneCursor');
 let radius = parseInt(localStorage.getItem('radius')) || 15; // Récupérer la valeur du local storage ou 15 par défaut
 let clonePt = null;
 let targetPt = null;
@@ -100,12 +101,33 @@ document.getElementById('cloneStampButton').addEventListener('click', (e) => {
     cloneStampActive = !cloneStampActive;
     const button = document.getElementById('cloneStampButton');
     button.classList.toggle('is-active', cloneStampActive);
-    button.style.backgroundColor = cloneStampActive ? 'white' : '';
+    button.style.backgroundColor = cloneStampActive ? '#ffffff' : '';
     document.getElementById('diameterControls').classList.toggle('hidden', !cloneStampActive);
+    cloneCursor.style.display = cloneStampActive ? 'block' : 'none';
 });
 
 document.getElementById('diameterRange').addEventListener('input', (e) => {
     radius = parseInt(e.target.value);
     document.getElementById('diameterValue').textContent = radius;
     localStorage.setItem('radius', radius);
+    updateCloneCursor();
 });
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!cloneStampActive) return;
+    const canvasRect = canvas.getBoundingClientRect();
+    const x = e.clientX - canvasRect.left + (document.getElementById('diameterRange').valueAsNumber/2);
+    const y = e.clientY - canvasRect.top + (document.getElementById('diameterRange').valueAsNumber/1.5) + document.getElementById('ImageTranslatedLabel').getBoundingClientRect().height + document.getElementById('image-toolbar').getBoundingClientRect().height;
+
+    cloneCursor.style.left = `${x - radius}px`;
+    cloneCursor.style.top = `${y - radius}px`;
+});
+
+function updateCloneCursor() {
+    cloneCursor.style.width = `${radius}px`;
+    cloneCursor.style.height = `${radius}px`;
+    cloneCursor.style.borderRadius = `${radius}px`;
+}
+
+// Initial call to set the cursor size
+updateCloneCursor();
