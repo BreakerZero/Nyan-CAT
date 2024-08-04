@@ -31,7 +31,7 @@ document.getElementById('diameterRange').value = radius;
 document.getElementById('diameterValue').textContent = radius;
 
 function saveState() {
-    imageHistory.push(canvas.toDataURL());
+    imageHistory.push(canvas.toDataURL('image/jpeg'));
 }
 
 function restoreState() {
