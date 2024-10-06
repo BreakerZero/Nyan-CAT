@@ -10689,3 +10689,19 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 	z-index: 1000;
 	display: none;
 }
+
+.text-block {
+    position: absolute;
+    resize: both;
+    overflow: hidden;
+    cursor: move;
+    background-color: transparent;
+    color: black;
+    border: 1px solid black;
+    padding: 5px;
+    min-width: 50px;
+    min-height: 20px;
+    box-sizing: border-box;
+	text-align: center;
+	line-height: 1.5;
+}
