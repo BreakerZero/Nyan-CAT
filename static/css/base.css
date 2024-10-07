@@ -10705,3 +10705,7 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 	text-align: center;
 	line-height: 1.5;
 }
+
+input[type="range"] {
+	width: 20%;
+}

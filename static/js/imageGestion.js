@@ -106,7 +106,7 @@ document.getElementById('cloneStampButton').addEventListener('click', (e) => {
     const button = document.getElementById('cloneStampButton');
     button.classList.toggle('is-active', cloneStampActive);
     button.style.backgroundColor = cloneStampActive ? '#ffffff' : '';
-    document.getElementById('diameterControls').classList.toggle('hidden', !cloneStampActive);
+    document.getElementById('diameterControls').style.visibility = cloneStampActive ? 'visible' : 'hidden';
     cloneCursor.style.display = cloneStampActive ? 'block' : 'none';
 });
 
@@ -284,12 +284,35 @@ document.getElementById('ValidationModifiedImgButton').addEventListener('click',
             })
         });
 
-        if (response.ok) {
-            alert('L\'image et les textes ont été sauvegardés avec succès.');
-        } else {
+        if (!response.ok) {
             alert('Erreur lors de la sauvegarde. Veuillez réessayer.');
         }
     } catch (error) {
         console.error('Erreur lors de l\'envoi des données :', error);
+    }
+});
+
+// Ajouter un gestionnaire de sélection de bloc
+document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('text-block')) {
+        currentTextBlock = event.target;
+        const currentFontSize = parseFloat(window.getComputedStyle(currentTextBlock).fontSize);
+        document.getElementById('fontSizeControls').classList.remove('hidden');
+        document.getElementById('fontSizeRange').value = currentFontSize;
+        document.getElementById('fontSizeValue').textContent = currentFontSize;
+    } else {
+        currentTextBlock = null;
+        document.getElementById('fontSizeControls').classList.add('hidden');
+
+    }
+});
+
+// Ajouter la logique pour ajuster la taille du texte dans le bloc sélectionné
+document.getElementById('fontSizeRange').addEventListener('input', (e) => {
+    const newSize = e.target.value;
+    document.getElementById('fontSizeValue').textContent = newSize;
+
+    if (currentTextBlock) {
+        currentTextBlock.style.fontSize = `${newSize}px`;
     }
 });

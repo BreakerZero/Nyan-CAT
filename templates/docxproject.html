@@ -55,10 +55,15 @@
                 <div id="image-toolbar" class="toolbar ql-toolbar ql-snow" style="display:none;">
                     <button id="cloneStampButton" class="button is-small"><i class="fas fa-clone"></i></button>
                     <button id="addTextButton" class="button is-small"><i class="fas fa-font"></i></button>
-                    <div id="diameterControls" class="hidden right-align">
+                    <div id="diameterControls" class="is-inline-flex" style="visibility: hidden;">
                         <label for="diameterRange" style="border-left: 1px solid white;">Diamètre:</label>
                         <input type="range" id="diameterRange" min="5" max="50" value="15">
                         <span id="diameterValue">15</span>
+                    </div>
+                    <div id="fontSizeControls" class="is-inline-flex">
+                        <label for="fontSizeRange">Taille texte :</label>
+                        <input type="range" id="fontSizeRange" min="10" max="100" value="16">
+                        <span id="fontSizeValue">16</span>px
                     </div>
                 </div>
                 <canvas id="translatedImageCanvas" style="display:none;"></canvas>
