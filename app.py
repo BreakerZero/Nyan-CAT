@@ -10,13 +10,13 @@ import base64
 import io
 import os
 
-from backend.converterAPI import ConverterAPI
-from flask import Flask, request, jsonify, render_template, redirect, sessions, url_for, flash, abort
+from nyan.converterAPI import ConverterAPI
+from flask import Flask, request, jsonify, render_template, redirect, flash, abort
 import flask_login
 from werkzeug.security import generate_password_hash, check_password_hash
 import flask_sqlalchemy
 from werkzeug.utils import redirect, secure_filename
-from backend.translateAPI import TranslatorAPI
+from nyan.translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 from flask_dropzone import Dropzone
 import html2text
@@ -31,12 +31,11 @@ app.config['DROPZONE_INVALID_FILE_TYPE'] = "L'extension de ce fichier de corresp
 app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-file_path = os.path.abspath(os.getcwd()) + "\\database\\nyan.db"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(file_path)  # Nom de la bdd
+file_path = os.path.join(os.getcwd(), 'database', 'nyan.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path  # Nom de la bdd
 app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
 app.config['UPLOAD_FOLDER'] = "fileproject"
-app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt',
-								   '.txt']  # extensions autorisées
+app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt', '.txt']
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 50  # max 50Mo
 db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
@@ -420,7 +419,8 @@ def newproject():
 		except:
 			idproject = "0"
 		idproject = str(int(idproject) + 1)
-		os.mkdir(app.config['UPLOAD_FOLDER'] + "/" + idproject)
+		directory_path = os.path.join(app.config['UPLOAD_FOLDER'], idproject)
+		os.mkdir(directory_path)
 		for item in my_files:
 			up_file = my_files.get(item)
 			up_file.filename = secure_filename(up_file.filename)
@@ -428,7 +428,9 @@ def newproject():
 				file_ext = os.path.splitext(up_file.filename)[1]
 			if file_ext not in app.config['UPLOAD_EXTENSIONS']:
 				abort(400)
-			up_file.save(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + idproject, up_file.filename))
+			directory_path = os.path.join(app.config['UPLOAD_FOLDER'], str(idproject))
+			os.makedirs(directory_path, exist_ok=True)
+			up_file.save(os.path.join(directory_path, up_file.filename))
 		if type == "Roman/Light Novel (Textuel)":
 			type = "text"
 		elif type == "Manga/BD (Image)":
@@ -444,7 +446,7 @@ def newproject():
 
 def docx_get_ressource_in_request(request, id, namefile):
 	idblock = int(request.json["ressource"])
-	OriginalDocx = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile)
+	OriginalDocx = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), namefile))
 	Html = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock)
 	PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, OriginalDocx, idblock - 1)
 	if PreviousHtml == "<p><br></p>":
@@ -476,8 +478,9 @@ def projecttextdocx(id):
 		#get project data
 		(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(id)
 		if extension == "docx":
-			files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-			namefile = str(files[0])
+			folder_path = os.path.join(app.config['UPLOAD_FOLDER'], str(id))
+			files = os.listdir(folder_path)
+			namefile = min(files, key=len)
 			if "ressource" in request.json:  #Demande ressouce fichier original
 				Html, PreviousHtml, NextHtml = docx_get_ressource_in_request(request, id, namefile)
 				return jsonify({"result": Html, "previous": PreviousHtml, "next": NextHtml})
@@ -488,7 +491,7 @@ def projecttextdocx(id):
 				TranslatedHtml = str(request.json["translatedtext"])
 				if TranslatedHtml == "<p><br></p>" or TranslatedHtml == "<p class=""><br></p>":
 					TranslatedHtml = "<p></p>"
-				SaveName = app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + "translated-" + namefile
+				SaveName = os.path.join(app.config['UPLOAD_FOLDER'], str(id), "translated-" + namefile)
 				if len(files) == 1:  #Création du fichier de sortie s'il n'existe pas
 					TranslatedDocx = docx.Document()
 					TranslatedDocx.save(SaveName)
@@ -511,7 +514,7 @@ def projecttextdocx(id):
 						Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
 				else:  #Si le block n'existe pas dans le document de sortie
 					text = html2text.html2text(OriginalHtml)
-					parasin = docx.Document(app.config['UPLOAD_FOLDER'] + "/" + str(id) + "/" + namefile).paragraphs
+					parasin = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), namefile)).paragraphs
 					prev_paragraph = get_context_paragraphs(idblock, parasin, direction="before")
 					next_paragraph = get_context_paragraphs(idblock, parasin, direction="after")
 					translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary, prev_paragraph, next_paragraph)  #on tente une traduction si on a rien dans la mémoire de traduction
@@ -737,8 +740,8 @@ def saveimg(id):
 		img_str = base64.b64encode(buffered.getvalue()).decode()
 
 		# Charger ou créer un document Word
-		files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'] + "/" + str(id)))
-		targetfile = str(files[1])
+		files = os.listdir(os.path.join(app.config['UPLOAD_FOLDER'], str(id)))
+		targetfile = max(files, key=len)  # Récupère le fichier avec le nom le plus long
 
 		if targetfile:
 			targetdoc = Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), targetfile))

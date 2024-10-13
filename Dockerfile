@@ -2,7 +2,7 @@
 FROM ubuntu:latest
 
 # Définir le mainteneur
-LABEL maintainer="your_email@example.com"
+LABEL maintainer="Breaker"
 
 # Mettre à jour le système et installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
@@ -35,9 +35,6 @@ COPY / /app
 EXPOSE 5000
 
 # Définir la variable d'environnement pour Flask
+ENV PYTHONPATH="/app"
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
-ENV PATH="/app/venv/bin:$PATH"
-
-# Démarrer l'application Flask
-CMD ["flask", "run", "--host=0.0.0.0"]
