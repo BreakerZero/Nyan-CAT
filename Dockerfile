@@ -2,7 +2,7 @@
 FROM ubuntu:latest
 
 # Définir le mainteneur
-LABEL maintainer="Breaker"
+LABEL maintainer="Breaker000"
 
 # Mettre à jour le système et installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
