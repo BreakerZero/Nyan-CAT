@@ -10,5 +10,5 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=production
       - PATH=/app/venv/bin:$PATH
-    command: /app/venv/bin/flask run --host=0.0.0.0
+    command: /app/venv/bin/flask run --host=0.0.0.0 --port=5000 --with-threads --cert=ssl/ssl.crt --key=ssl/ssl.key
     tty: true
