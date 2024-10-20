@@ -18,17 +18,10 @@ import flask_sqlalchemy
 from werkzeug.utils import redirect, secure_filename
 from nyan.translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
-from flask_dropzone import Dropzone
 import html2text
 import threading
 
 app = Flask(__name__)
-app.config['DROPZONE_REDIRECT_VIEW'] = "home"
-app.config['DROPZONE_DEFAULT_MESSAGE'] = "Déposez vos fichiers ici (faites un glisser-deposer ou cliquez pour ouvrir)"
-app.config['DROPZONE_ALLOWED_FILE_CUSTOM'] = True
-app.config['DROPZONE_ALLOWED_FILE_TYPE'] = '.png, .jpg, .jpeg, .pdf, .docx, .doc, .odt,.txt'
-app.config['DROPZONE_INVALID_FILE_TYPE'] = "L'extension de ce fichier de correspond pas avec votre précédente sélection"
-app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 file_path = os.path.join(os.getcwd(), 'database', 'nyan.db')
@@ -36,13 +29,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path  # Nom de la bd
 app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
 app.config['UPLOAD_FOLDER'] = "fileproject"
 app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt', '.txt']
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 50  # max 50Mo
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 500  # max 500Mo
 db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
 login_manager = LoginManager()
 login_manager.login_view = '/login'
 login_manager.init_app(app)
-dropzone = Dropzone(app)
 ConvAPI = ConverterAPI()
 
 
@@ -173,6 +165,11 @@ class TranslationMemory(db.Model):  # Modèle mémoire de traduction
 	Project = db.Column(db.Integer, nullable=False)
 	Segment = db.Column(db.Integer, nullable=False)
 
+class Context(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	Active = db.Column(db.Boolean, nullable=False)
+	Text = db.Column(db.String(500), nullable=False)
+
 
 def Glos():  # fonction formatage glossaire
 	formatedGlo = ""
@@ -239,8 +236,7 @@ def get_prediction():
 	target = request.json['target']
 	formality = request.json['formality']
 	text = request.json['text']
-	translation = TranslatorAPI.translate(translator, provider, apikey, source, target, formality, text,
-										  formatedGlossary)
+	translation = TranslatorAPI.translate(translator, provider, apikey, source, target, formality, text, formatedGlossary)
 	return jsonify({"output": translation})
 
 
@@ -298,6 +294,58 @@ def Glossary_Update(id):
 			return "la mise à jour dans le glossaire a échoué"
 	else:
 		return render_template('update.html', Glossary_to_Update=Glossary_to_Update)
+
+
+@app.route("/context", methods=["GET", "POST"])
+@login_required
+def context():
+	if request.method == "POST":
+		C_Active = 'Active' in request.form  # Vérifie si la case à cocher "Active" a été cochée
+		C_Text = request.form['Text']
+		New_Context = Context(Active=C_Active, Text=C_Text)
+		try:
+			db.session.add(New_Context)
+			db.session.commit()
+			flash("Ajout de l'entrée de contexte réussi")
+			return redirect("/context")
+		except:
+			flash("L'ajout de l'entrée de contexte a échoué")
+			return redirect("/context")
+	else:
+		ContextList = Context.query.order_by(Context.id).with_entities(Context.id, Context.Active, Context.Text).all()
+		return render_template('context.html', ContextList=ContextList)
+
+
+@app.route("/context/delete/<int:id>")
+@login_required
+def Context_Delete(id):
+	Context_to_Delete = Context.query.get_or_404(id)
+	try:
+		db.session.delete(Context_to_Delete)
+		db.session.commit()
+		flash("Suppression réussie")
+		return redirect("/context")
+	except:
+		flash("La suppression de l'entrée de contexte a échoué")
+		return redirect("/context")
+
+
+@app.route("/context/update/<int:id>", methods=["GET", "POST"])
+@login_required
+def Context_Update(id):
+	Context_to_Update = Context.query.get_or_404(id)
+	if request.method == "POST":
+		Context_to_Update.Active = 'Active' in request.form  # Mise à jour du statut actif
+		Context_to_Update.Text = request.form['Text']
+		try:
+			db.session.commit()
+			flash("Mise à jour réussie")
+			return redirect("/context")
+		except:
+			flash("La mise à jour de l'entrée de contexte a échoué")
+			return "La mise à jour de l'entrée de contexte a échoué"
+	else:
+		return render_template('contextupdate.html', Context_to_Update=Context_to_Update)
 
 
 @app.route('/login', methods=["GET", "POST"])
@@ -435,8 +483,7 @@ def newproject():
 			type = "text"
 		elif type == "Manga/BD (Image)":
 			type = "image"
-		new_project = Project(id=int(idproject), Name=name, Type=type, Owner=current_owner, Extension=format,
-							  Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0)
+		new_project = Project(id=int(idproject), Name=name, Type=type, Owner=current_owner, Extension=format, Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0, Last_Previous_Block=0)
 		db.session.add(new_project)
 		db.session.commit()
 		return redirect('/home')
@@ -517,7 +564,7 @@ def projecttextdocx(id):
 					parasin = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), namefile)).paragraphs
 					prev_paragraph = get_context_paragraphs(idblock, parasin, direction="before")
 					next_paragraph = get_context_paragraphs(idblock, parasin, direction="after")
-					translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary, prev_paragraph, next_paragraph)  #on tente une traduction si on a rien dans la mémoire de traduction
+					translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary, prev_paragraph, next_paragraph, Context)  #on tente une traduction si on a rien dans la mémoire de traduction
 					translation = translation.replace("\n", "")
 					Html = '<p>' + translation + "</p>"
 					ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)

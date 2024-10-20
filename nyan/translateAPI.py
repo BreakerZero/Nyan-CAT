@@ -1,4 +1,5 @@
 import os
+import re
 from io import StringIO
 
 # from transformers import MarianTokenizer, MarianMTModel
@@ -30,7 +31,7 @@ class TranslatorAPI:
 		self.models[route] = (model, tok)
 		return 1, f"Successfully loaded model for {route} transation"""""
 
-	def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGlossary="", prev_paragraph: str = "", next_paragraph: str = ""):
+	def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGlossary="", prev_paragraph: str = "", next_paragraph: str = "", Context=""):
 		if provider == "Nyan-CAT":  # fournisseur interne
 			"""route = f'{source}-{target}'
 			if not self.models.get(route):
@@ -42,7 +43,10 @@ class TranslatorAPI:
 			return words[0]"""
 			pass
 		if provider == "DeepL":
+			context_suppl = ', '.join([context.Text for context in Context.query.filter_by(Active=True).with_entities(Context.Text).all()])
+			clean_text = re.sub(r'!\[\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', text)
 			if apikey != "":  # si une clé est saisie
+				#suppl context
 				if str(formality) == "informal":
 					formality = "less"
 				elif str(formality) == "formal":
@@ -57,10 +61,11 @@ class TranslatorAPI:
 					target_lang="FR",
 					entries=dictionnary,
 				)
-				r = translator.translate_text(text=text, source_lang=source, target_lang=target, glossary=g, formality=formality)
+				context = f'global context: {context_suppl}, previous sentences : {prev_paragraph}, next sentences : {next_paragraph}'
+				r = translator.translate_text(text=clean_text, source_lang=source, target_lang=target, glossary=g, formality=formality, context=context)
 				return str(r)
 			else:  # si aucune clé n'a été saisie
 				translator = PersonalDeepl(request=Request())
 				glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=[source.upper(), target.upper()])
 				glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language=source, target_language=target)
-				return translator.translate(text, target, source, formality, glossary, prev_paragraph, next_paragraph).result
+				return translator.translate(clean_text, target, source, formality, glossary, prev_paragraph, next_paragraph).result

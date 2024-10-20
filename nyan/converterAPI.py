@@ -56,6 +56,11 @@ class ConverterAPI:
         soup = BeautifulSoup(Html, 'html.parser')
         p_tag = soup.find('p')
         img_tag = soup.find('img')
+        heading_tag = None
+        for level in range(1, 7):
+            heading_tag = soup.find(f'h{level}')
+            if heading_tag:
+                break
         if img_tag:
             #remove all img tags
             Html = re.sub(r'<img.*?>', '', Html)
@@ -63,19 +68,24 @@ class ConverterAPI:
         tempdocx.save("temp.docx")
         #determine if img is before or after the text :
         imgisbefore = True
-        imgisbefore = p_tag.contents and p_tag.contents[0] == img_tag
+        if p_tag and img_tag:
+            imgisbefore = p_tag.contents and p_tag.contents[0] == img_tag
         for ParaInHtml in range(0, len(tempdocx.paragraphs)):
-            if len(tempdocx.paragraphs) + ParaPosition > len(Docx.paragraphs):
+            while len(tempdocx.paragraphs) + ParaPosition > len(Docx.paragraphs):
                 Docx.add_paragraph()
-            Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
-            Docx.paragraphs[ParaPosition + ParaInHtml].alignment = tempdocx.paragraphs[ParaInHtml].alignment
-            Docx.paragraphs[ParaPosition + ParaInHtml].style = tempdocx.paragraphs[ParaInHtml].style
-            Docx.paragraphs[ParaPosition + ParaInHtml].style.name = tempdocx.paragraphs[ParaInHtml].style.name
-            Docx.paragraphs[ParaPosition + ParaInHtml].style.base_style = tempdocx.paragraphs[ParaInHtml].style.base_style
-            Docx.paragraphs[ParaPosition + ParaInHtml].style.priority = tempdocx.paragraphs[ParaInHtml].style.priority
-            Docx.paragraphs[ParaPosition + ParaInHtml].style.style_id = tempdocx.paragraphs[ParaInHtml].style.style_id
-            Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.left_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.left_indent
-            Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.right_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.right_indent
+            if heading_tag:
+                heading_level = int(heading_tag.name[1])
+                Docx.paragraphs[ParaPosition + ParaInHtml].style = f"Heading {heading_level}"
+            else:
+                Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
+                Docx.paragraphs[ParaPosition + ParaInHtml].alignment = tempdocx.paragraphs[ParaInHtml].alignment
+                Docx.paragraphs[ParaPosition + ParaInHtml].style = tempdocx.paragraphs[ParaInHtml].style
+                Docx.paragraphs[ParaPosition + ParaInHtml].style.name = tempdocx.paragraphs[ParaInHtml].style.name
+                Docx.paragraphs[ParaPosition + ParaInHtml].style.base_style = tempdocx.paragraphs[ParaInHtml].style.base_style
+                Docx.paragraphs[ParaPosition + ParaInHtml].style.priority = tempdocx.paragraphs[ParaInHtml].style.priority
+                Docx.paragraphs[ParaPosition + ParaInHtml].style.style_id = tempdocx.paragraphs[ParaInHtml].style.style_id
+                Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.left_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.left_indent
+                Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.right_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.right_indent
 
             for idx, run in enumerate(tempdocx.paragraphs[ParaInHtml].runs):
                 if len(tempdocx.paragraphs[ParaInHtml].runs) > len(Docx.paragraphs[ParaPosition + ParaInHtml].runs):
@@ -89,11 +99,11 @@ class ConverterAPI:
                 Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.name = run.font.name
                 Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.size = run.font.size
 
-            images = soup.find_all('img')
-            if len(images) > 0:
-                img = images[0]
-                img_data = img['src'].split('base64,')[-1]
-                self.insert_image_from_base64(Docx, img_data, ParaPosition, imgisbefore)
+                images = soup.find_all('img')
+                if len(images) > 0:
+                    img = images[0]
+                    img_data = img['src'].split('base64,')[-1]
+                    self.insert_image_from_base64(Docx, img_data, ParaPosition, imgisbefore)
             Docx.save(SaveName)
 
 

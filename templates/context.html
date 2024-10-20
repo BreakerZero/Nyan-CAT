@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-12 is-offset-0">
+    <div class="box">
+        <h1 class="title">Nouvelle entrée de contexte :</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification">
+                <span class="icon is-medium is-left">
+                    <i class="fas fa-info-circle is-primary"></i>
+                </span>
+                <span>{{ messages[0] }}</span>
+            </div>
+        {% endif %}
+        {% endwith %}
+        <form action="/context" method="POST">
+            <div class="field is-horizontal">
+                <div class="field-body">
+                    <div class="field">
+                        <p class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" name="Active" value="true">
+                                Actif
+                            </label>
+                        </p>
+                    </div>
+                    <div class="field">
+                        <p class="control">
+                            <input type="text" name="Text" placeholder="Texte" class="input" required autocomplete="off">
+                        </p>
+                    </div>
+                    <div class="field is-grouped is-grouped-centered is-horizontal">
+                        <p class="control">
+                            <input class="button is-block is-info" type="submit" value="Ajouter">
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table id="ContextTable" class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth lastelement">
+    <thead>
+        <tr>
+            <th>Actif</th>
+            <th>Texte</th>
+            <th>Suppression</th>
+            <th>Modification</th>
+        </tr>
+    </thead>
+    {% if ContextList %}
+        {% for line in ContextList %}
+            <tr>
+                <td>
+                    <input type="checkbox" disabled {% if line.Active %} checked {% endif %}>
+                </td>
+                <td>{{ line.Text }}</td>
+                <td><a href="/context/delete/{{line.id}}">Supprimer</a></td>
+                <td><a href="/context/update/{{line.id}}">Modifier</a></td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+</table>
+</main>
+{% endblock %}
