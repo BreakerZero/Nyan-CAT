@@ -90,6 +90,7 @@
             <a class="button" onclick="downsectionnumber()"><</a>
             <input class="input" id="sectionnumber" type="text" autocomplete="off" value="{{ last }}" oninput="parseInt(getRessourceProject(document.getElementById('sectionnumber').value))">
             <a class="button" onclick="upsectionnumber()">></a>
+            <span style="display: flex;text-align: center;align-items: center;justify-content: center;">sur {{ total_sections }}</span>
         </div>
     </div>
 </form>

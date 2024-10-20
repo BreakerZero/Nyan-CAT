@@ -26,7 +26,7 @@
                 </span>
                 <p style="font-size: 1.5em;">{{ project.Name }}</p>
                 <p>{{ project.Source_Lang }}-{{ project.Target_Lang }}</p>
-                <p><progress class="progress is-small is-primary" value="{{ project.Advancement }}" max="100"></progress></p>
+                <p><progress class="progress is-small is-primary" value="{{ project.Advancement *100 }}" max="100"></progress></p>
               </a>
             </div>
             {% endfor %}

@@ -65,15 +65,34 @@ def manage_csv_memory(project_id):
 def get_project_data_for_get_method(project_id):
 	project = Project.query.filter_by(id=project_id).first()
 	user = User.query.filter_by(id=flask_login.current_user.id).first()
+
+	# Récupérer le chemin du dossier de projet
+	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(project_id))
+
+	# Trouver le fichier DOCX avec le nom le plus court
+	docx_files = [f for f in os.listdir(project_folder) if f.endswith('.docx')]
+
+	if not docx_files:
+		total_sections = 0  # Aucun fichier trouvé
+	else:
+		# Trouver le fichier avec le nom le plus court
+		shortest_docx = min(docx_files, key=len)
+
+		# Ouvrir le fichier DOCX et compter les paragraphes
+		doc_path = os.path.join(project_folder, shortest_docx)
+		doc = Document(doc_path)
+		total_sections = len(doc.paragraphs)  # Compter les paragraphes
+
 	return (
 		project.Type,
 		project.Extension,
 		project.Last_Block,
-		os.listdir(os.path.join(app.config['UPLOAD_FOLDER'], str(project_id))),
+		os.listdir(project_folder),
 		user.KeepStyle,
 		user.Autocomplete,
 		user.TranslatorSettings,
-		project
+		project,
+		total_sections  # Ajouter le nombre total de sections ici
 	)
 
 
@@ -514,11 +533,11 @@ def projecttextdocx(id):
 		#create csv file if not exist
 		manage_csv_memory(id)
 		#get project data
-		(type, extension, last, files, keepstyle, complete, translatorsettings, project) = get_project_data_for_get_method(id)
+		(type, extension, last, files, keepstyle, complete, translatorsettings, project, total_sections) = get_project_data_for_get_method(id)
 		if extension == "docx":
 			return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete,
 								   user=flask_login.current_user, project=project,
-								   translatorsettings=translatorsettings, extension=extension, type=type)
+								   translatorsettings=translatorsettings, extension=extension, type=type, total_sections=total_sections)
 		else:
 			return render_template('404.html'), 404
 	if request.method == "POST":
@@ -571,6 +590,9 @@ def projecttextdocx(id):
 				Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(
 					id=id).first().Last_Block
 				Project.query.filter_by(id=id).first().Last_Block = idblock
+				doc = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), str(namefile)))
+				total_sections = len(doc.paragraphs)
+				Project.query.filter_by(id=id).first().Advancement = idblock/total_sections
 				db.session.commit()
 				PreviousHtml = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock - 1)
 				if PreviousHtml == "<p><br></p>":
