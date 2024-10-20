@@ -1,7 +1,8 @@
 version: "3"
 services:
-  nyan-cat:
+  nyancat:
     build: .
+    image: nyan-cat:latest
     ports:
       - "5000:5000"
     environment:
@@ -10,3 +11,4 @@ services:
       - FLASK_ENV=production
       - PATH=/app/venv/bin:$PATH
     command: /app/venv/bin/flask run --host=0.0.0.0
+    tty: true

@@ -826,4 +826,4 @@ def saveimg(id):
 		return redirect("/project/text/docx/" + str(id))
 
 
-app.run(host="127.0.0.1", port=5000, threaded=True)
+app.run(host="127.0.0.1", port=5000, threaded=True, ssl_context=('ssl/ssl.pem', 'ssl/ssl.pem'))
