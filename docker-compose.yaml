@@ -1,6 +1,6 @@
 version: "3"
 services:
-  nyan-cat-app:
+  nyan-cat:
     build: .
     ports:
       - "5000:5000"
