@@ -824,6 +824,3 @@ def saveimg(id):
 		targetdoc.save(os.path.join(app.config['UPLOAD_FOLDER'], str(id), targetfile))
 
 		return redirect("/project/text/docx/" + str(id))
-
-
-app.run(host="127.0.0.1", port=5000, threaded=True, ssl_context=('ssl/ssl.crt', 'ssl/ssl.key'))
