@@ -12,7 +12,7 @@ services:
       - PATH=/app/venv/bin:$PATH
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
-    command: /app/venv/bin/flask run --host=0.0.0.0 --port=5000 --with-threads --cert=ssl/ssl.crt --key=ssl/ssl.key
+    command: /app/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
     tty: true
 
   nginx:

@@ -27,6 +27,7 @@ RUN python3 -m venv /app/venv
 # Activer l'environnement virtuel et installer les dépendances
 COPY requirements.txt requirements.txt
 RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+RUN /app/venv/bin/pip install gunicorn
 
 # Copier le reste des fichiers de l'application dans le conteneur
 COPY / /app
