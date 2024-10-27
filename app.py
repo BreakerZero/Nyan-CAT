@@ -11,7 +11,7 @@ import io
 import os
 
 from nyan.converterAPI import ConverterAPI
-from flask import Flask, request, jsonify, render_template, redirect, flash, abort
+from flask import Flask, request, jsonify, render_template, redirect, flash, abort, send_from_directory
 import flask_login
 from werkzeug.security import generate_password_hash, check_password_hash
 import flask_sqlalchemy
@@ -207,6 +207,9 @@ def Glos():  # fonction formatage glossaire
 with app.app_context():
 	formatedGlossary = Glos()
 
+@app.route('/favicon.ico')
+def favicon():
+	return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/', methods=["GET"])  # racine site
 def index():
