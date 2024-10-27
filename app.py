@@ -386,19 +386,36 @@ def login():
 			if not os.path.exists(static_folder):
 				os.makedirs(static_folder)
 
-			jsonpath = os.path.join(static_folder, f"memory{testpseudo.id}.json")
-			if not os.path.exists(jsonpath):
-				with open(jsonpath, "w", encoding="UTF-8") as jsonfile:
+			json_path = os.path.join(static_folder, f"memory{testpseudo.id}.json")
+			if not os.path.exists(json_path):
+				with open(json_path, "w", encoding="UTF-8") as jsonfile:
 					jsonfile.write("[]")
 
+			csv_path = os.path.join(static_folder, f"memory{testpseudo.id}.csv")
+			if not os.path.exists(csv_path):
+				with open(csv_path, "w", encoding="UTF-8", newline="") as csvfile:
+					csv_writer = csv.writer(csvfile)
+					csv_writer.writerow(["id", "Source_Lang", "Target_Lang", "Source", "Target"])
+
 			data = TranslationMemory.query.filter_by(Owner=int(testpseudo.id)).all()
-			jsondata = []
-			for i in data:
-				jsondata.append(
-					{"id": i.id, "Source_Lang": i.Source_Lang, "Target_Lang": i.Target_Lang, "Source": i.Source,
-					 "Target": i.Target})
-			json.dump(jsondata, jsonfile)
-			jsonfile.close()
+			json_data = []
+
+			with open(json_path, "w", encoding="UTF-8") as jsonfile, \
+					open(csv_path, "a", encoding="UTF-8", newline="") as csvfile:
+
+				csv_writer = csv.writer(csvfile)
+				for i in data:
+					entry = {
+						"id": i.id,
+						"Source_Lang": i.Source_Lang,
+						"Target_Lang": i.Target_Lang,
+						"Source": i.Source,
+						"Target": i.Target
+					}
+					json_data.append(entry)
+					csv_writer.writerow([i.id, i.Source_Lang, i.Target_Lang, i.Source, i.Target])
+				json.dump(json_data, jsonfile)
+
 			login_user(testpseudo, remember=remember)
 			return redirect("/home")
 	else:
