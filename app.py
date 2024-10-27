@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 import base64
 import io
 import os
+import re
 
 from nyan.converterAPI import ConverterAPI
 from flask import Flask, request, jsonify, render_template, redirect, flash, abort, send_from_directory
@@ -92,7 +93,7 @@ def get_project_data_for_get_method(project_id):
 		user.Autocomplete,
 		user.TranslatorSettings,
 		project,
-		total_sections  # Ajouter le nombre total de sections ici
+		total_sections
 	)
 
 
@@ -558,8 +559,8 @@ def projecttextdocx(id):
 				idpreviousblock = request.json["previoustranslated"]
 				OriginalHtml = str(request.json["originaltext"])
 				TranslatedHtml = str(request.json["translatedtext"])
-				if TranslatedHtml == "<p><br></p>" or TranslatedHtml == "<p class=""><br></p>":
-					TranslatedHtml = "<p></p>"
+				if TranslatedHtml == '<p><br></p>' or TranslatedHtml == '<p class=""><br></p>':
+					TranslatedHtml = '<p></p>'
 				SaveName = os.path.join(app.config['UPLOAD_FOLDER'], str(id), "translated-" + namefile)
 				if len(files) == 1:  #Création du fichier de sortie s'il n'existe pas
 					TranslatedDocx = docx.Document()
@@ -574,24 +575,43 @@ def projecttextdocx(id):
 					else:
 						mutex.release()
 				text = html2text.html2text(TranslatedHtml)
-				if idblock < len(TranslatedDocx.paragraphs):  #L'écriture du fichier de sortie s'écrivant au fur et à mesure
-					if TranslatedDocx.paragraphs[idblock].text != text:  #Si le text est différent on enregistre ce nouveau texte
-						if idpreviousblock is not None:
-							ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
-						Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-					else:
-						Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
-				else:  #Si le block n'existe pas dans le document de sortie
+				text = text.replace("\n", "")
+				paragraph_exists = idblock < len(TranslatedDocx.paragraphs)
+				current_text = TranslatedDocx.paragraphs[idblock].text if paragraph_exists else ""
+				if paragraph_exists and current_text.strip() != text.strip() and not current_text == '':
+					if idpreviousblock is not None:
+						ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock), SaveName)
+					Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
+				else:
 					text = html2text.html2text(OriginalHtml)
+					text = text.replace("\n", "")
 					parasin = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), namefile)).paragraphs
+					text = re.sub(r"!\[\]\(data:image\/[^\)]+\)", "", text).replace("\n", "")
 					prev_paragraph = get_context_paragraphs(idblock, parasin, direction="before")
 					next_paragraph = get_context_paragraphs(idblock, parasin, direction="after")
-					translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, text, formatedGlossary, prev_paragraph, next_paragraph, Context)  #on tente une traduction si on a rien dans la mémoire de traduction
-					translation = translation.replace("\n", "")
-					Html = '<p>' + translation + "</p>"
-					ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
-				Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(
-					id=id).first().Last_Block
+
+					if text:
+						translation = TranslatorAPI.translate(
+							translator, provider, settings, apikey, source, target, formality, text,
+							formatedGlossary, prev_paragraph, next_paragraph, Context
+						).replace("\n", "")
+					else:
+						translation = ""
+
+					if re.search(r'\[([^\]]+)\]\(([^\)]+)\)', translation):
+						Html = re.sub(r'\[([^\]]+)\]\(([^\)]+)\)', r'<a href="\2">\1</a>', translation)
+					elif re.search(r'^#', translation):
+						for i in range(6, 0, -1):
+							Html = re.sub(r'^' + ('#' * i) + r' (.+)$', rf'<h{i}>\1</h{i}>', text, flags=re.MULTILINE)
+					else:
+						Html = f'<p>{translation}</p>'
+					if current_text == '':
+						bloc_to_save = int(idpreviousblock) if idpreviousblock is not None else idblock
+						TranslatedHtml = TranslatedHtml if TranslatedHtml != '<p></p>' else Html
+						ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, bloc_to_save, SaveName)
+					else:
+						ConverterAPI.ParaHtmlToDocx(ConvAPI, Html, TranslatedDocx, idblock, SaveName)
+				Project.query.filter_by(id=id).first().Last_Previous_Block = Project.query.filter_by(id=id).first().Last_Block
 				Project.query.filter_by(id=id).first().Last_Block = idblock
 				doc = docx.Document(os.path.join(app.config['UPLOAD_FOLDER'], str(id), str(namefile)))
 				total_sections = len(doc.paragraphs)
@@ -827,3 +847,7 @@ def saveimg(id):
 		targetdoc.save(os.path.join(app.config['UPLOAD_FOLDER'], str(id), targetfile))
 
 		return redirect("/project/text/docx/" + str(id))
+
+if __name__ == "__main__":
+	if os.getenv("FLASK_ENV") != "production":
+		app.run(host="127.0.0.1", port=5000, threaded=True, debug=True)

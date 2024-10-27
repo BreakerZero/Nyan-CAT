@@ -14,6 +14,60 @@ class ConverterAPI:
     def __init__(self):
         self.new_parser = HtmlToDocx()
 
+    def get_or_create_hyperlink_style(self, d):
+        """If this document had no hyperlinks so far, the builtin
+           Hyperlink style will likely be missing and we need to add it.
+           There's no predefined value, different Word versions
+           define it differently.
+           This version is how Word 2019 defines it in the
+           default theme, excluding a theme reference.
+        """
+        if "Hyperlink" not in d.styles:
+            if "Default Character Font" not in d.styles:
+                ds = d.styles.add_style("Default Character Font",
+                                        docx.enum.style.WD_STYLE_TYPE.CHARACTER,
+                                        True)
+                ds.element.set(docx.oxml.shared.qn('w:default'), "1")
+                ds.priority = 1
+                ds.hidden = True
+                ds.unhide_when_used = True
+                del ds
+            hs = d.styles.add_style("Hyperlink",
+                                    docx.enum.style.WD_STYLE_TYPE.CHARACTER,
+                                    True)
+            hs.base_style = d.styles["Default Character Font"]
+            hs.unhide_when_used = True
+            hs.font.color.rgb = docx.shared.RGBColor(0x05, 0x63, 0xC1)
+            hs.font.underline = True
+            del hs
+
+        return "Hyperlink"
+
+    def add_hyperlink(self, paragraph, text, url):
+        # This gets access to the document.xml.rels file and gets a new relation id value
+        part = paragraph.part
+        r_id = part.relate_to(url, docx.opc.constants.RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+
+        # Create the w:hyperlink tag and add needed values
+        hyperlink = docx.oxml.shared.OxmlElement('w:hyperlink')
+        hyperlink.set(docx.oxml.shared.qn('r:id'), r_id, )
+
+        # Create a new run object (a wrapper over a 'w:r' element)
+        new_run = docx.text.run.Run(
+            docx.oxml.shared.OxmlElement('w:r'), paragraph)
+        new_run.text = text
+
+        # Set the run's style to the builtin hyperlink style, defining it if necessary
+        new_run.style = self.get_or_create_hyperlink_style(part.document)
+        # Alternatively, set the run's formatting explicitly
+        # new_run.font.color.rgb = docx.shared.RGBColor(0, 0, 255)
+        # new_run.font.underline = True
+
+        # Join all the xml elements together
+        hyperlink.append(new_run._element)
+        paragraph._p.append(hyperlink)
+        return hyperlink
+
     def insert_image_from_base64(self, doc, base64_str, ParaPosition, imgisbefore):
         image_data = base64.b64decode(base64_str)
         image_stream = BytesIO(image_data)
@@ -57,6 +111,7 @@ class ConverterAPI:
         p_tag = soup.find('p')
         img_tag = soup.find('img')
         heading_tag = None
+        link_tag = soup.find('a')
         for level in range(1, 7):
             heading_tag = soup.find(f'h{level}')
             if heading_tag:
@@ -76,6 +131,11 @@ class ConverterAPI:
             if heading_tag:
                 heading_level = int(heading_tag.name[1])
                 Docx.paragraphs[ParaPosition + ParaInHtml].style = f"Heading {heading_level}"
+            if link_tag:
+                link_text = link_tag.get_text()
+                href = link_tag['href']
+                Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
+                self.add_hyperlink(Docx.paragraphs[ParaPosition + ParaInHtml], link_text, href)
             else:
                 Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
                 Docx.paragraphs[ParaPosition + ParaInHtml].alignment = tempdocx.paragraphs[ParaInHtml].alignment
@@ -134,6 +194,8 @@ class ConverterAPI:
             tag = re.sub(r'[a-z- ]+', '', style).lower()
         if tag == 't':
             tag = 'h1'
+        if ParatoConvert.hyperlinks:
+            tag = 'a'
         elif "p" in tag:
             tag = "p"
         if ParatoConvert.alignment or ParatoConvert.paragraph_format.left_indent or ParatoConvert.style.paragraph_format.alignment or ParatoConvert.style.paragraph_format.left_indent:
@@ -176,5 +238,7 @@ class ConverterAPI:
                 Html = Html + "</span>"
             if run.element.xpath('.//a:blip'):
                 Html = Html + self.extract_and_get_img_html(run, Docx.part)
+        if tag == 'a':
+            Html = Html[:-1] + " href=" + ParatoConvert.hyperlinks[0].fragment + '>' + ParatoConvert.text
         Html = Html + '</' + tag + '>'
         return Html
