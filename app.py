@@ -382,8 +382,15 @@ def login():
 			flash("Authentification impossible, vérifiez vos informations d'identification.")
 			return redirect("/login")
 		else:
-			jsonpath = "static/json/memory" + str(testpseudo.id) + ".json"
-			jsonfile = open(jsonpath, "w", encoding="UTF-8")
+			static_folder = os.path.join("static", "json")
+			if not os.path.exists(static_folder):
+				os.makedirs(static_folder)
+
+			jsonpath = os.path.join(static_folder, f"memory{testpseudo.id}.json")
+			if not os.path.exists(jsonpath):
+				with open(jsonpath, "w", encoding="UTF-8") as jsonfile:
+					jsonfile.write("[]")
+
 			data = TranslationMemory.query.filter_by(Owner=int(testpseudo.id)).all()
 			jsondata = []
 			for i in data:
