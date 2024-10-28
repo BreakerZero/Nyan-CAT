@@ -34,7 +34,7 @@ COPY init_database.sh /app/init_database.sh
 COPY initial_nyan.db /app/initial_nyan.db
 
 # Donner les permissions d'exécution au script
-RUN chmod +x /app/init_database.sh
+RUN chmod 777 /app/init_database.sh
 
 # Copier le reste des fichiers de l'application dans le conteneur
 COPY / /app
