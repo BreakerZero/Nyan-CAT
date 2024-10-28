@@ -515,7 +515,7 @@ def newproject():
 			idproject = "0"
 		idproject = str(int(idproject) + 1)
 		directory_path = os.path.join(app.config['UPLOAD_FOLDER'], idproject)
-		os.mkdir(directory_path)
+		os.makedirs(directory_path, exist_ok=True)
 		for item in my_files:
 			up_file = my_files.get(item)
 			up_file.filename = secure_filename(up_file.filename)
