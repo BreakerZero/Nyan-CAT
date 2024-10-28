@@ -1,0 +1,28 @@
+version: "3"
+services:
+  nyancat:
+    build: .
+    image: nyan-cat:latest
+    ports:
+      - "7777:5000"
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PATH=/app/venv/bin:$PATH
+    volumes:
+      - /usr/builtin/etc/certificate:/app/ssl
+      - /share/Docker/NyanCAT/fileproject:/app/fileproject
+      - /share/Docker/NyanCAT/database:/app/database
+    tty: true
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "9000:80"
+      - "9443:443"
+    volumes:
+      - /volume1/Web/nginx.conf:/etc/nginx/nginx.conf
+      - /usr/builtin/etc/certificate:/etc/nginx/ssl
+    depends_on:
+      - nyancat
