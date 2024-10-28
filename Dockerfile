@@ -25,6 +25,8 @@ RUN /app/venv/bin/pip install gunicorn
 
 COPY / /app
 
+COPY static/js/controlInput.js /app/static/js/controlInput.js
+
 RUN chmod +x /app/init_database.sh
 
 EXPOSE 5000
