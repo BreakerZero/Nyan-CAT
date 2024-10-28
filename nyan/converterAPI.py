@@ -188,7 +188,7 @@ class ConverterAPI:
         ParatoConvert = Docx.paragraphs[ParaPosition]
         style = ParatoConvert.style.name
         valclass = ""
-        if style == "Normal":
+        if style == "Normal" or "Block" in style or 'Para' in style:
             tag = 'p'
         else:
             tag = re.sub(r'[a-z- ]+', '', style).lower()
