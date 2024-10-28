@@ -25,7 +25,7 @@ RUN /app/venv/bin/pip install gunicorn
 
 COPY / /app
 
-#RUN mv /app/static/js/ControlInput.js /app/static/js/controlInput.js
+RUN mv /app/static/js/ControlInput.js /app/static/js/controlInput.js
 
 RUN chmod +x /app/init_database.sh
 
