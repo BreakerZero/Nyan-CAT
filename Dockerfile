@@ -33,11 +33,11 @@ RUN /app/venv/bin/pip install gunicorn
 COPY init_database.sh /app/init_database.sh
 COPY initial_nyan.db /app/initial_nyan.db
 
-# Donner les permissions d'exécution au script
-RUN chmod 777 /app/init_database.sh
-
 # Copier le reste des fichiers de l'application dans le conteneur
 COPY / /app
+
+# Donner les permissions d'exécution au script
+RUN chmod 777 /app/init_database.sh
 
 # Exposer le port sur lequel Flask va écouter
 EXPOSE 5000
