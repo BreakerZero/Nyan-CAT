@@ -1,10 +1,7 @@
-# Utiliser une image de base Ubuntu
 FROM ubuntu:latest
 
-# Définir le mainteneur
 LABEL maintainer="Breaker000"
 
-# Mettre à jour le système et installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -18,34 +15,22 @@ RUN apt-get update && apt-get install -y \
     git \
     && apt-get clean
 
-# Créer un répertoire de travail pour l'application
 WORKDIR /app
 
-# Créer un environnement virtuel Python
 RUN python3 -m venv /app/venv
 
-# Activer l'environnement virtuel et installer les dépendances
 COPY requirements.txt requirements.txt
 RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
 RUN /app/venv/bin/pip install gunicorn
 
-# Copier le script d'initialisation et la base de données initiale
-COPY init_database.sh /app/init_database.sh
-COPY initial_nyan.db /app/initial_nyan.db
-
-# Copier le reste des fichiers de l'application dans le conteneur
 COPY / /app
 
-# Donner les permissions d'exécution au script
-RUN chmod 777 /app/init_database.sh
+RUN chmod +x /app/init_database.sh
 
-# Exposer le port sur lequel Flask va écouter
 EXPOSE 5000
 
-# Définir la variable d'environnement pour Flask
 ENV PYTHONPATH="/app"
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 
-# Définir le script comme point d'entrée
 ENTRYPOINT ["/app/init_database.sh"]
