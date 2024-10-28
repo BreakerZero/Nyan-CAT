@@ -55,7 +55,12 @@ def verify_owner(project_id):
 
 
 def manage_csv_memory(project_id):
-	csv_path = f"static/csv/memory{project_id}.csv"
+	csv_dir = os.path.join("static", "csv")
+	csv_path = os.path.join(csv_dir, f"memory{project_id}.csv")
+
+	os.makedirs(csv_dir, exist_ok=True)
+
+	# Crée le fichier CSV si nécessaire
 	if not os.path.isfile(csv_path):
 		with open(csv_path, "w") as csvfile:
 			writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
@@ -451,8 +456,9 @@ def signup():
 @app.route('/logout')
 @login_required
 def logout():
-	if os.path.exists("static/json/memory" + str(flask_login.current_user.id) + ".json"):
-		os.remove("static/json/memory" + str(flask_login.current_user.id) + ".json")
+	json_path = os.path.join("static", "json", f"memory{flask_login.current_user.id}.json")
+	if os.path.exists(json_path):
+		os.remove(json_path)
 	logout_user()
 	return redirect("/")
 
@@ -691,31 +697,24 @@ def addsegment():
 		Target = request.json['Target']
 		Source_Lang = request.json['Source_Lang']
 		Target_Lang = request.json['Target_Lang']
-		#search if the segment already exists
-		if TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).first() is None:
-			New_TranslationMemory = TranslationMemory(Owner=User_ID, Project=Project_ID, Segment=Segment_ID,
-													  Source=Source, Target=Target, Source_Lang=Source_Lang,
-													  Target_Lang=Target_Lang)
+		csv_path = os.path.join("static", "csv", f"memory{Project_ID}.csv")
+		existing_segment = TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).first()
+		if existing_segment is None:
+			New_TranslationMemory = TranslationMemory(Owner=User_ID, Project=Project_ID, Segment=Segment_ID, Source=Source, Target=Target, Source_Lang=Source_Lang, Target_Lang=Target_Lang)
 			db.session.add(New_TranslationMemory)
 			db.session.commit()
-			if os.path.isfile("static/csv/memory" + str(Project_ID) + ".csv"):
-				with open("static/csv/memory" + str(Project_ID) + ".csv", "a+") as csvfile:
-					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-										lineterminator='\n')
-					Source = Source.replace('\n', '')
-					Target = Target.replace('\n', '')
-					writer.writerow([Source, Target])
+			if os.path.isfile(csv_path):
+				with open(csv_path, "a+") as csvfile:
+					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+					writer.writerow([Source.replace('\n', ''), Target.replace('\n', '')])
 		else:
-			TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).update(
-				{'Source': Source, 'Target': Target, 'Source_Lang': Source_Lang, 'Target_Lang': Target_Lang})
+			TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).update({'Source': Source, 'Target': Target, 'Source_Lang': Source_Lang, 'Target_Lang': Target_Lang})
 			db.session.commit()
-			if os.path.isfile("static/csv/memory" + str(Project_ID) + ".csv"):
-				with open("static/csv/memory" + str(Project_ID) + ".csv", "a+") as csvfile:
-					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-										lineterminator='\n')
-					Source = Source.replace('\n', '')
-					Target = Target.replace('\n', '')
-					writer.writerow([Source, Target])
+			if os.path.isfile(csv_path):
+				with open(csv_path, "a+") as csvfile:
+					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+					writer.writerow([Source.replace('\n', ''), Target.replace('\n', '')])
+
 		return jsonify({"result": "ok"})
 
 
