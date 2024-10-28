@@ -12,7 +12,8 @@ services:
       - PATH=/app/venv/bin:$PATH
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
-      - /share/Docker/:/app
+      - /share/Docker/NyanCAT/fileproject:/app/fileproject
+      - /share/Docker/NyanCAT/database:/app/database
     command: /app/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
     tty: true
 
