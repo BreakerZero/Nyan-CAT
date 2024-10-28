@@ -31,7 +31,7 @@ RUN /app/venv/bin/pip install gunicorn
 
 # Copier le script d'initialisation et la base de données initiale
 COPY init_database.sh /app/init_database.sh
-COPY database/initial_nyan.db /app/database/initial_nyan.db
+COPY database/initial_nyan.db /app/initial_nyan.db
 
 # Donner les permissions d'exécution au script
 RUN chmod +x /app/init_database.sh
