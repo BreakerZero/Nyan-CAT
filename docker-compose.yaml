@@ -12,6 +12,7 @@ services:
       - PATH=/app/venv/bin:$PATH
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
+      - /share/Docker/:/app
     command: /app/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
     tty: true
 
