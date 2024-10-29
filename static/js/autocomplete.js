@@ -150,21 +150,18 @@ function clear(event) {
                     qleditor.lastChild.innerHTML = qleditor.lastChild.innerHTML.slice(0, -1);
                 }
                 lastrecurelement(qleditor).insertAdjacentHTML('beforeend', htmltoshow.textContent);
-                var range = document.createRange()
-                var sel = window.getSelection()
-                var len = lastrecurelement(qleditor).childNodes.length
-                if (qleditor.children[0].innerText === htmltoshow.textContent)
-                {
-                    range.setStart(lastrecurelement(qleditor).childNodes[0], htmltoshow.textContent.length)
-                }
-                else
-                {
-                    range.setStart(lastrecurelement(qleditor).childNodes[len - 1], 1)
-                }
                 htmltoshow.textContent = "";
-                range.collapse(true)
-                sel.removeAllRanges()
-                sel.addRange(range)
+                setTimeout(() => {
+                    const caret = getCaretTopPoint(); // Obtient la position exacte après l'insertion
+                    var range = document.createRange();
+                    var sel = window.getSelection();
+
+                    // Positionne le caret à la fin
+                    range.selectNodeContents(lastrecurelement(qleditor));
+                    range.collapse(false); // Se place à la fin du contenu inséré
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }, 10);
             }
             break;
         case 13:
