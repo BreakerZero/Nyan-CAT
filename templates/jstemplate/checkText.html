@@ -1,4 +1,14 @@
 <script>
+const categoryColors = {
+    "Faute de frappe possible": '#f2a0a0',            // Rouge clair pour orthographe
+    "Grammaire": '#c9a0f2',              // Violet clair pour grammaire
+    "Ponctuation": '#a0f2f2',
+    "Majuscules": '#a0f2f2',  // Bleu clair pour ponctuation
+    "Style": '#f2d2a0',                  // Orange clair pour style
+    "Confusion d’homonymes et paronymes": '#f2a0c2', // Rose clair pour confusions
+    "default": '#e1e1e1'                 // Gris clair pour les autres erreurs
+};
+
 let grammarCheckTimeout;
 let grammarErrors = {};
 let lastTextVersion = "";
@@ -15,23 +25,25 @@ function highlightErrors(errors) {
 
     let offset = 0;
     quill.getContents().ops.forEach(op => {
-        const length = op.insert.length || 1; // Utiliser 1 pour des caractères simples
-        if (op.attributes && op.attributes.background === '#f2a0a0') {
+        const length = typeof op.insert === 'string' ? op.insert.length : 1;
+        if (op.attributes && op.attributes.background) {
             quill.formatText(offset, length, { background: false });
         }
         offset += length;
     });
 
     errors.forEach(error => {
+        const color = categoryColors[error.category] || categoryColors["default"];
         grammarErrors[error.offset] = {
             suggestions: error.suggestions.slice(0, 5),
             length: error.length
         };
         quill.formatText(error.offset, error.length, {
-            background: '#f2a0a0',
+            background: color,
         });
     });
 }
+
 
 
 function checkGrammarInRealTime() {
@@ -64,7 +76,6 @@ document.getElementById("editorjs").addEventListener("contextmenu", function(eve
     const blot = Quill.find(event.target);
 
     if (blot && blot.domNode.innerText.length) {
-        const errorLength = blot.domNode.innerText.length;
         let offset = 0;
         let found = false;
 

@@ -876,19 +876,16 @@ def saveimg(id):
 
 @app.route('/check_grammar', methods=['POST'])
 def check_grammar():
-	# Récupérer le texte depuis la requête
 	data = request.get_json()
 	text = data.get("text", "")
 	project_id = data.get("project_id", "")
 
-	# Préparer la requête pour le serveur LanguageTool
 	payload = {
 		'text': text,
 		'language': Project.query.filter_by(id=project_id).first().Target_Lang
 	}
 	response = requests.post(LANGUAGETOOL_URL, data=payload)
 
-	# Gérer les erreurs du serveur LanguageTool
 	if response.status_code != 200:
 		return jsonify({"error": "LanguageTool server error"}), 500
 
@@ -900,7 +897,8 @@ def check_grammar():
 			'offset': match['offset'],
 			'length': match['length'],
 			'suggestions': [suggestion['value'] for suggestion in match['replacements']],
-			'sentence': match['sentence']
+			'sentence': match['sentence'],
+			'category': match['rule']['category']['name']
 		}
 		for match in result['matches']
 	]
