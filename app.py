@@ -900,12 +900,11 @@ def check_grammar():
 			'offset': match['offset'],
 			'length': match['length'],
 			'suggestions': [suggestion['value'] for suggestion in match['replacements']],
-			'sentence' : match['sentence']
+			'sentence': match['sentence']
 		}
 		for match in result['matches']
 	]
 
-	# Retourner les erreurs sous forme de JSON
 	return jsonify(errors)
 
 if __name__ == "__main__":

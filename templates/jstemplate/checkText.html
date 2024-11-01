@@ -1,41 +1,45 @@
 <script>
 let grammarCheckTimeout;
 let grammarErrors = {};
+let lastTextVersion = "";
 
-    // Déclencher la vérification grammaticale toutes les 2 secondes après chaque modification de texte
-    quill.on('text-change', () => {
-        if (grammarCheckTimeout) clearTimeout(grammarCheckTimeout);
-        grammarCheckTimeout = setTimeout(() => {
-            checkGrammarInRealTime();
-        }, 2000);
-    });
+quill.on('text-change', () => {
+    if (grammarCheckTimeout) clearTimeout(grammarCheckTimeout);
+    grammarCheckTimeout = setTimeout(() => {
+        checkGrammarInRealTime();
+    }, 2000);
+});
 
-// Fonction pour surligner les erreurs de grammaire
 function highlightErrors(errors) {
-    grammarErrors = {}; // Réinitialiser les erreurs pour cette mise à jour
+    grammarErrors = {};
 
-    // Supprimer tous les styles d'erreur précédents
-    quill.getContents().ops.forEach((op, index) => {
-        if (op.attributes && op.attributes.color === '#f83e3e' && op.attributes.underline) {
-            quill.formatText(index, op.insert.length, { color: false, underline: false });
+    let offset = 0;
+    quill.getContents().ops.forEach(op => {
+        const length = op.insert.length || 1; // Utiliser 1 pour des caractères simples
+        if (op.attributes && op.attributes.background === '#f2a0a0') {
+            quill.formatText(offset, length, { background: false });
         }
+        offset += length;
     });
 
-    // Appliquer les styles d'erreur pour les erreurs actuelles
     errors.forEach(error => {
-        grammarErrors[error.offset] = error.suggestions.slice(0,5);
+        grammarErrors[error.offset] = {
+            suggestions: error.suggestions.slice(0, 5),
+            length: error.length
+        };
         quill.formatText(error.offset, error.length, {
-            color: '#f83e3e',
-            underline: true,
-            'data-suggestions': JSON.stringify(error.suggestions.slice(0,5))  // Attacher les suggestions
+            background: '#f2a0a0',
         });
     });
 }
 
 
-// Fonction pour vérifier la grammaire en temps réel
 function checkGrammarInRealTime() {
     const text = quill.getText();
+    
+    if (text === lastTextVersion) {return;}
+    lastTextVersion = text;
+
     const projectId = {{ id }};
 
     fetch('/check_grammar', {
@@ -47,20 +51,20 @@ function checkGrammarInRealTime() {
     })
     .then(response => response.json())
     .then(data => {
-        highlightErrors(data);  // Appliquer les nouveaux surlignements
+        if (text === lastTextVersion) {
+            highlightErrors(data);
+        }
     })
     .catch(error => {
         console.error("Erreur lors de la vérification grammaticale :", error);
     });
 }
 
-// Menu contextuel pour les suggestions
 document.getElementById("editorjs").addEventListener("contextmenu", function(event) {
     const blot = Quill.find(event.target);
 
     if (blot && blot.domNode.innerText.length) {
         const errorLength = blot.domNode.innerText.length;
-        
         let offset = 0;
         let found = false;
 
@@ -73,10 +77,10 @@ document.getElementById("editorjs").addEventListener("contextmenu", function(eve
             }
         });
 
-        const suggestions = grammarErrors[offset];
-        if (suggestions) {
+        const error = grammarErrors[offset];
+        if (error && error.suggestions) {
             event.preventDefault();
-            showSuggestionsMenu(event, suggestions, offset, errorLength);
+            showSuggestionsMenu(event, error.suggestions, offset, error.length);
         }
     }
 });
@@ -86,7 +90,6 @@ function showSuggestionsMenu(event, suggestions, index, errorLength) {
     const menu = document.createElement("div");
     menu.classList.add("suggestions-menu");
 
-    // Ajustement de la position avec le défilement
     menu.style.top = `${event.clientY + window.scrollY}px`;
     menu.style.left = `${event.clientX + window.scrollX}px`;
 
@@ -96,10 +99,8 @@ function showSuggestionsMenu(event, suggestions, index, errorLength) {
         option.innerText = suggestion;
 
         option.onclick = () => {
-            // Supprimer le texte incorrect
+
             quill.deleteText(index, errorLength);
-            
-            // Insérer la suggestion sans style
             quill.insertText(index, suggestion);
 
             menu.remove();
@@ -109,9 +110,6 @@ function showSuggestionsMenu(event, suggestions, index, errorLength) {
     });
 
     document.body.appendChild(menu);
-
-    // Supprimer le menu quand on clique ailleurs
     document.addEventListener("click", () => menu.remove(), { once: true });
 }
-
 </script>
