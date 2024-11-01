@@ -24,6 +24,7 @@ var quill = new Quill('#editorjs', {
   },
   theme: 'snow'
 });
+quill.root.setAttribute('spellcheck', false)
 var disabledquill = new Quill('#disablededitorjs', {
   modules: {
     toolbar: toolbarOptions

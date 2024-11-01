@@ -100,6 +100,7 @@
 {% if complete %}<script src="{{ url_for('static', filename='js/autocomplete.js') }}" type="application/javascript"></script>{% endif %}
 <script src="{{ url_for('static', filename='js/imageGestion.js') }}" type="application/javascript"></script>
 {% include 'jstemplate/taoGestion.html' %}
+{% include 'jstemplate/checkText.html' %}
 <script src="{{ url_for('static', filename='js/lastSectionGestion.js') }}" type="application/javascript"></script>
 <script src="{{ url_for('static', filename='js/trainBeforeUnload.js') }}" type="application/javascript"></script>
 {% endblock %}

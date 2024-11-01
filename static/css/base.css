@@ -10709,3 +10709,27 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 input[type="range"] {
 	width: 20%;
 }
+
+.grammar-error {
+    text-decoration: underline;
+    text-decoration-color: red;
+    cursor: pointer;
+}
+
+.suggestions-menu {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 5px;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-option {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.suggestion-option:hover {
+    background-color: #f0f0f0;
+}

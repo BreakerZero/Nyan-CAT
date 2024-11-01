@@ -1,0 +1,117 @@
+<script>
+let grammarCheckTimeout;
+let grammarErrors = {};
+
+    // Déclencher la vérification grammaticale toutes les 2 secondes après chaque modification de texte
+    quill.on('text-change', () => {
+        if (grammarCheckTimeout) clearTimeout(grammarCheckTimeout);
+        grammarCheckTimeout = setTimeout(() => {
+            checkGrammarInRealTime();
+        }, 2000);
+    });
+
+// Fonction pour surligner les erreurs de grammaire
+function highlightErrors(errors) {
+    grammarErrors = {}; // Réinitialiser les erreurs pour cette mise à jour
+
+    // Supprimer tous les styles d'erreur précédents
+    quill.getContents().ops.forEach((op, index) => {
+        if (op.attributes && op.attributes.color === '#f83e3e' && op.attributes.underline) {
+            quill.formatText(index, op.insert.length, { color: false, underline: false });
+        }
+    });
+
+    // Appliquer les styles d'erreur pour les erreurs actuelles
+    errors.forEach(error => {
+        grammarErrors[error.offset] = error.suggestions.slice(0,5);
+        quill.formatText(error.offset, error.length, {
+            color: '#f83e3e',
+            underline: true,
+            'data-suggestions': JSON.stringify(error.suggestions.slice(0,5))  // Attacher les suggestions
+        });
+    });
+}
+
+
+// Fonction pour vérifier la grammaire en temps réel
+function checkGrammarInRealTime() {
+    const text = quill.getText();
+    const projectId = {{ id }};
+
+    fetch('/check_grammar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text: text, project_id: projectId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        highlightErrors(data);  // Appliquer les nouveaux surlignements
+    })
+    .catch(error => {
+        console.error("Erreur lors de la vérification grammaticale :", error);
+    });
+}
+
+// Menu contextuel pour les suggestions
+document.getElementById("editorjs").addEventListener("contextmenu", function(event) {
+    const blot = Quill.find(event.target);
+
+    if (blot && blot.domNode.innerText.length) {
+        const errorLength = blot.domNode.innerText.length;
+        
+        let offset = 0;
+        let found = false;
+
+        Array.from(quill.root.childNodes[0].childNodes).forEach(child => {
+            if (found) return;
+            if (child === blot.domNode) {
+                found = true;
+            } else {
+                offset += child ? child.length : 0;
+            }
+        });
+
+        const suggestions = grammarErrors[offset];
+        if (suggestions) {
+            event.preventDefault();
+            showSuggestionsMenu(event, suggestions, offset, errorLength);
+        }
+    }
+});
+
+
+function showSuggestionsMenu(event, suggestions, index, errorLength) {
+    const menu = document.createElement("div");
+    menu.classList.add("suggestions-menu");
+
+    // Ajustement de la position avec le défilement
+    menu.style.top = `${event.clientY + window.scrollY}px`;
+    menu.style.left = `${event.clientX + window.scrollX}px`;
+
+    suggestions.forEach(suggestion => {
+        const option = document.createElement("div");
+        option.classList.add("suggestion-option");
+        option.innerText = suggestion;
+
+        option.onclick = () => {
+            // Supprimer le texte incorrect
+            quill.deleteText(index, errorLength);
+            
+            // Insérer la suggestion sans style
+            quill.insertText(index, suggestion);
+
+            menu.remove();
+        };
+        
+        menu.appendChild(option);
+    });
+
+    document.body.appendChild(menu);
+
+    // Supprimer le menu quand on clique ailleurs
+    document.addEventListener("click", () => menu.remove(), { once: true });
+}
+
+</script>

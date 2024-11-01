@@ -1,38 +1,63 @@
-FROM ubuntu:latest
+FROM python:3.11.10-alpine3.20
 
 LABEL maintainer="Breaker000"
 
-RUN apt-get update && apt-get install -y \
+# Installer les dépendances système et pipx
+RUN apk update && apk add --no-cache \
+    curl \
+    unzip \
     python3 \
-    python3-pip \
-    python3-venv \
-    build-essential \
-    libssl-dev \
-    libffi-dev \
-    python3-dev \
-    libgl1 \
-    libglib2.0-0 \
+    py3-pip \
+    py3-setuptools \
+    py3-distutils-extra \
+    openjdk11-jre \
+    bash \
     git \
-    && apt-get clean
+    build-base \
+    python3-dev \
+    ffmpeg \
+    lapack-dev \
+    blas-dev \
+    libgcc \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    tiff-dev \
+    openblas-dev \
+    gfortran \
+    gtk+3.0-dev \
+    gstreamer-dev \
+    libdc1394-dev \
+    pipx \
+    && pipx ensurepath
 
+# Définir le répertoire de travail
 WORKDIR /app
 
-RUN python3 -m venv /app/venv
-
+# Copier les dépendances dans le conteneur
 COPY requirements.txt requirements.txt
-RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
-RUN /app/venv/bin/pip install gunicorn
 
+# Télécharger et configurer LanguageTool
+RUN curl -L -o languagetool.zip https://languagetool.org/download/LanguageTool-stable.zip && \
+    unzip languagetool.zip -d /app/languagetool && \
+    rm languagetool.zip
+
+# Utiliser pipx pour installer des outils et des dépendances globales
+RUN pipx install --python python3 gunicorn \
+    && pipx inject gunicorn  -r requirements.txt
+
+# Copier le code de l'application dans le conteneur
 COPY / /app
 
-RUN mv /app/static/js/ControlInput.js /app/static/js/controlInput.js
-
+# Rendre le script init_database exécutable
 RUN chmod +x /app/init_database.sh
+# Exposer les ports pour Flask (5000) et LanguageTool (8081)
+EXPOSE 5000 8081
 
-EXPOSE 5000
-
+# Définir les variables d'environnement pour Flask
 ENV PYTHONPATH="/app"
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 
-ENTRYPOINT ["/app/init_database.sh"]
+# Lancer LanguageTool et Flask en parallèle
+CMD java -cp /app/languagetool/LanguageTool-*/languagetool-server.jar org.languagetool.server.HTTPServer --port 8081 --allow-origin & \
+    /app/init_database.sh

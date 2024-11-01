@@ -4,6 +4,7 @@ import docx
 import csv
 import cv2
 import numpy as np
+import requests
 from docx import Document
 from PIL import Image, ImageDraw, ImageFont
 import base64
@@ -22,6 +23,7 @@ from flask_login import UserMixin, LoginManager, login_user, current_user, login
 import html2text
 import threading
 
+LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
 app = Flask(__name__)
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -870,6 +872,41 @@ def saveimg(id):
 		targetdoc.save(os.path.join(app.config['UPLOAD_FOLDER'], str(id), targetfile))
 
 		return redirect("/project/text/docx/" + str(id))
+
+
+@app.route('/check_grammar', methods=['POST'])
+def check_grammar():
+	# Récupérer le texte depuis la requête
+	data = request.get_json()
+	text = data.get("text", "")
+	project_id = data.get("project_id", "")
+
+	# Préparer la requête pour le serveur LanguageTool
+	payload = {
+		'text': text,
+		'language': Project.query.filter_by(id=project_id).first().Target_Lang
+	}
+	response = requests.post(LANGUAGETOOL_URL, data=payload)
+
+	# Gérer les erreurs du serveur LanguageTool
+	if response.status_code != 200:
+		return jsonify({"error": "LanguageTool server error"}), 500
+
+	# Extraire les erreurs de grammaire et d'orthographe
+	result = response.json()
+	errors = [
+		{
+			'message': match['message'],
+			'offset': match['offset'],
+			'length': match['length'],
+			'suggestions': [suggestion['value'] for suggestion in match['replacements']],
+			'sentence' : match['sentence']
+		}
+		for match in result['matches']
+	]
+
+	# Retourner les erreurs sous forme de JSON
+	return jsonify(errors)
 
 if __name__ == "__main__":
 	if os.getenv("FLASK_ENV") != "production":
