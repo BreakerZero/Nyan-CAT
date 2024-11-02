@@ -18,10 +18,7 @@ with app.app_context():
 	global server_started
 	if not server_started:
 		with start_lock:
-			try:
 				update_added_txt_and_restart_lt(kill=False)
-			except Exception as e:
-				pass
 			server_started = True
 
 
