@@ -26,8 +26,10 @@ import html2text
 import threading
 
 LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
-LANGUAGETOOL_PATH = "languagetool/LanguageTool-6.5"
-ADDED_FILES_DIR = "languagetool/LanguageTool-6.5/org/languagetool/resource"
+LANGUAGETOOL_BASE_DIR = "languagetool"
+LANGUAGETOOL_VERSION = "LanguageTool-6.5"
+LANGUAGETOOL_PATH = os.path.join(LANGUAGETOOL_BASE_DIR, LANGUAGETOOL_VERSION)
+ADDED_FILES_DIR = os.path.join(LANGUAGETOOL_PATH, "org", "languagetool", "resource")
 app = Flask(__name__)
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -39,6 +41,8 @@ app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.d
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 500  # max 500Mo
 db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
+start_lock = threading.Lock()
+server_started = False
 login_manager = LoginManager()
 login_manager.login_view = '/login'
 login_manager.init_app(app)
