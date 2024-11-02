@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Modifier le vocabulaire</h1>
+<div class="column is-8 is-offset-2">
+    <div class="box">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+        {% endwith %}
+        <form method="POST" action="/vocab/update/{{ vocab_entry.id }}">
+            <div class="field">
+                <label>Langue</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="lang" required>
+                            <option value="en" {% if vocab_entry.Lang == 'en' %}selected{% endif %}>en</option>
+                            <option value="ja" {% if vocab_entry.Lang == 'ja' %}selected{% endif %}>ja</option>
+                            <option value="fr" {% if vocab_entry.Lang == 'fr' %}selected{% endif %}>fr</option>
+                            <option value="es" {% if vocab_entry.Lang == 'es' %}selected{% endif %}>es</option>
+                            <option value="it" {% if vocab_entry.Lang == 'it' %}selected{% endif %}>it</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label>Mot</label>
+                <p class="control">
+                    <input type="text" name="word" value="{{ vocab_entry.Word }}" placeholder="Mot" class="input" required>
+                </p>
+            </div>
+            <div class="field">
+                <label>Catégorie grammaticale</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="grammatical_category" required>
+                            <option value="N" {% if vocab_entry.Grammatical_Category == 'N' %}selected{% endif %}>Nom</option>
+                            <option value="V" {% if vocab_entry.Grammatical_Category == 'V' %}selected{% endif %}>Verbe</option>
+                            <option value="J" {% if vocab_entry.Grammatical_Category == 'J' %}selected{% endif %}>Adjectif</option>
+                            <option value="A" {% if vocab_entry.Grammatical_Category == 'A' %}selected{% endif %}>Adverbe</option>
+                            <option value="Z" {% if vocab_entry.Grammatical_Category == 'Z' %}selected{% endif %}>Nom propre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label>Genre (optionnel)</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="gender">
+                            <option value="" {% if vocab_entry.Gender == '' %}selected{% endif %}>Non spécifié</option>
+                            <option value="m" {% if vocab_entry.Gender == 'm' %}selected{% endif %}>Masculin</option>
+                            <option value="f" {% if vocab_entry.Gender == 'f' %}selected{% endif %}>Féminin</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label class="checkbox">
+                    <input type="checkbox" name="plural" {% if vocab_entry.Plural %}checked{% endif %}> Pas de pluriel
+                </label>
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <p class="control">
+                    <textarea name="description" placeholder="Description" class="textarea">{{ vocab_entry.Description }}</textarea>
+                </p>
+            </div>
+            <div class="field is-grouped is-grouped-centered">
+                <p class="control">
+                    <button type="submit" class="button is-primary">Mettre à jour</button>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+    <div class="lastelement"></div>
+{% endblock %}

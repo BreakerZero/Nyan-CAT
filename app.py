@@ -1,44 +1,11 @@
 # -*- coding: utf-8 -*-
-import json
-import docx
-import csv
-import cv2
-import numpy as np
-import requests
-from docx import Document
-from PIL import Image, ImageDraw, ImageFont
-import base64
-import io
-import os
-import re
+from models import *
+from settings import *
 
-from nyan.converterAPI import ConverterAPI
-from flask import Flask, request, jsonify, render_template, redirect, flash, abort, send_from_directory
-import flask_login
-from werkzeug.security import generate_password_hash, check_password_hash
-import flask_sqlalchemy
-from werkzeug.utils import redirect, secure_filename
-from nyan.translateAPI import TranslatorAPI
-from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
-import html2text
-import threading
-
-LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
-app = Flask(__name__)
-translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-file_path = os.path.join(os.getcwd(), 'database', 'nyan.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path  # Nom de la bdd
-app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
-app.config['UPLOAD_FOLDER'] = "fileproject"
-app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.doc', '.odt', '.txt']
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 500  # max 500Mo
-db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
-app.config["DEBUG"] = True  # option debug
-login_manager = LoginManager()
-login_manager.login_view = '/login'
-login_manager.init_app(app)
-ConvAPI = ConverterAPI()
+if system == "Linux" or system == "Darwin":
+	Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
+elif system == "Windows":
+	Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
 
 
 @app.errorhandler(413)
@@ -140,62 +107,6 @@ def get_context_paragraphs(i, parasin, direction="before"):
 
 	return " ".join(context)
 
-class Glossary(db.Model):  # Modèle du glossaire
-	id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-	Source_Lang = db.Column(db.Text, nullable=False)
-	Target_Lang = db.Column(db.Text, nullable=False)
-	Source = db.Column(db.Text, nullable=False)
-	Target = db.Column(db.Text, nullable=False)
-
-
-class User(UserMixin, db.Model):  # Modèle utilisateur
-	id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-	Pseudo = db.Column(db.Text, nullable=False, unique=True)
-	Mail = db.Column(db.Text, nullable=False, unique=True)
-	Password = db.Column(db.Text, nullable=False)
-	Status = db.Column(db.Integer)
-	TranslatorSettings = db.Column(db.Text, nullable=False)
-	TranslatorProvider = db.Column(db.Text, nullable=False)
-	Formality = db.Column(db.Text)
-	ApiKey = db.Column(db.Text, nullable=False)
-	KeepStyle = db.Column(db.Integer)
-	Autocomplete = db.Column(db.Integer)
-
-
-class Project(db.Model):  # Modèle projet
-	id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-	Name = db.Column(db.Text, nullable=False)
-	Type = db.Column(db.Text, nullable=False)
-	Owner = db.Column(db.Text, nullable=False)
-	Extension = db.Column(db.Text, nullable=False)
-	Source_Lang = db.Column(db.Text, nullable=False)
-	Target_Lang = db.Column(db.Text, nullable=False)
-	Advancement = db.Column(db.Integer, nullable=False)
-	Last_Block = db.Column(db.Integer, nullable=False)
-	Last_Previous_Block = db.Column(db.Integer, nullable=False)
-
-
-class Lexicon_fr(db.Model):
-	id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-	ortho = db.Column(db.String, nullable=False)
-	freqfilms = db.Column(db.Float, nullable=False)
-	freqlivres = db.Column(db.Float, nullable=False)
-
-
-class TranslationMemory(db.Model):  # Modèle mémoire de traduction
-	id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-	Source_Lang = db.Column(db.Text, nullable=False)
-	Target_Lang = db.Column(db.Text, nullable=False)
-	Source = db.Column(db.Text, nullable=False)
-	Target = db.Column(db.Text, nullable=False)
-	Owner = db.Column(db.Integer, nullable=False)
-	Project = db.Column(db.Integer, nullable=False)
-	Segment = db.Column(db.Integer, nullable=False)
-
-class Context(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	Active = db.Column(db.Boolean, nullable=False)
-	Text = db.Column(db.String(500), nullable=False)
 
 
 def Glos():  # fonction formatage glossaire
@@ -210,6 +121,56 @@ def Glos():  # fonction formatage glossaire
 			formatedGlo = formatedGlo + str(Gloquery[i][0]) + "\t" + str(Gloquery[i][1]) + "\n"
 			i = i + 1
 		return formatedGlo[:-1]
+
+
+def update_added_txt_and_restart_lt():
+	# Récupération des mots dans la base de données
+	vocab_entries = Vocab.query.all()
+
+	# Organisation par langue pour les entrées de vocabulaire
+	vocab_by_lang = {}
+	for entry in vocab_entries:
+		lang = entry.Lang
+		if lang not in vocab_by_lang:
+			vocab_by_lang[lang] = []
+
+		# Format de l'entrée : mot;forme de base;catégorie genre nombre
+		Gender = entry.Gender or "e"  # Vide si non défini
+		Plural = "sp" if entry.Plural else "s"
+		vocab_line = f"{entry.Word};{entry.Word};{entry.Grammatical_Category} {Gender} {Plural}".strip()
+		vocab_by_lang[lang].append(vocab_line)
+
+	# Mise à jour des fichiers `added.txt` pour chaque langue
+	for lang, entries in vocab_by_lang.items():
+		added_txt_path = os.path.join(ADDED_FILES_DIR, lang, "added.txt")
+		backup_path = os.path.join(ADDED_FILES_DIR, lang, "added_backup.txt")
+
+		# Sauvegarder l'original `added.txt` si non déjà fait
+		if not os.path.exists(backup_path):
+			os.rename(added_txt_path, backup_path)
+
+		# Charger les données depuis le backup
+		with open(backup_path, "r") as backup_file:
+			original_content = backup_file.readlines()
+
+		# Écrire l'original + les entrées de la base dans `added.txt`
+		with open(added_txt_path, "w") as f:
+			f.writelines(original_content)  # Ajouter le contenu d'origine
+			f.write("\n")
+			f.write("\n".join(entries))  # Ajouter les mots du vocab
+
+	# Redémarrer LanguageTool en fonction de l'OS
+	try:
+		if system == "Linux" or system == "Darwin":
+			run(["pkill", "-f", "languagetool-server"])
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
+		elif system == "Windows":
+			run(["taskkill", "/F", "/IM", "java.exe"], check=True)  # Arrête tous les processus Java
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
+
+		flash("Vocabulaire mis à jour et LanguageTool redémarré avec succès.")
+	except Exception as e:
+		flash(f"Erreur lors du redémarrage de LanguageTool : {e}")
 
 
 with app.app_context():
@@ -904,6 +865,68 @@ def check_grammar():
 	]
 
 	return jsonify(errors)
+
+
+@app.route("/vocab", methods=["GET", "POST"])
+@login_required
+def vocab():
+	if request.method == "POST":
+		lang = request.form['lang']
+		word = request.form['word']
+		grammatical_category = request.form['grammatical_category']
+		gender = request.form.get('gender')
+		plural = bool(request.form.get('plural'))
+		description = request.form.get('description')
+
+		new_vocab = Vocab(Lang=lang, Word=word, Grammatical_Category=grammatical_category, Gender=gender, Plural=plural, Description=description)
+		try:
+			db.session.add(new_vocab)
+			db.session.commit()
+			flash("Mot ajouté au vocabulaire")
+		except:
+			flash("Erreur lors de l'ajout du mot")
+		update_added_txt_and_restart_lt()
+		return redirect("/vocab")
+
+	vocab_list = Vocab.query.all()
+	return render_template('vocab.html', vocab_list=vocab_list)
+
+
+@app.route("/vocab/delete/<int:id>")
+@login_required
+def delete_vocab(id):
+	vocab_entry = Vocab.query.get_or_404(id)
+	try:
+		db.session.delete(vocab_entry)
+		db.session.commit()
+		flash("Mot supprimé du vocabulaire")
+	except:
+		flash("Erreur lors de la suppression du mot")
+	update_added_txt_and_restart_lt()
+	return redirect("/vocab")
+
+
+@app.route("/vocab/update/<int:id>", methods=["GET", "POST"])
+@login_required
+def update_vocab(id):
+	vocab_entry = Vocab.query.get_or_404(id)
+	if request.method == "POST":
+		vocab_entry.Lang = request.form['lang']
+		vocab_entry.Word = request.form['word']
+		vocab_entry.Grammatical_Category = request.form['grammatical_category']
+		vocab_entry.Gender = request.form.get('gender')
+		vocab_entry.Plural = bool(request.form.get('plural'))
+		vocab_entry.Description = request.form.get('description')
+		try:
+			db.session.commit()
+			flash("Mot mis à jour")
+		except:
+			flash("Erreur lors de la mise à jour du mot")
+		update_added_txt_and_restart_lt()
+		return redirect("/vocab")
+
+	return render_template('update_vocab.html', vocab_entry=vocab_entry)
+
 
 if __name__ == "__main__":
 	if os.getenv("FLASK_ENV") != "production":

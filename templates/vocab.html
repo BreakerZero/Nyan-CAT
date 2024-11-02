@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="column is-12 is-offset-0">
+    <div class="box">
+        <h1 class="title">Nouvelle entrée du vocabulaire :</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="notification">
+                <span class="icon is-medium is-left">
+                    <i class="fas fa-info-circle is-primary"></i>
+                  </span>
+                <span>{{ messages[0] }}</span>
+            </div>
+        {% endif %}
+        {% endwith %}
+        <form action="/vocab" method="POST">
+            <!-- Formulaire d'ajout de vocabulaire -->
+            <div class="field">
+                <p class="control">
+                    <label>Langue</label>
+                    <div class="select">
+                        <select name="lang" required>
+                            <option value="en">en</option>
+                            <option value="ja">ja</option>
+                            <option value="fr" selected="selected">fr</option>
+                            <option value="es">es</option>
+                            <option value="it">it</option>
+                        </select>
+                    </div>
+                </p>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <input type="text" name="word" placeholder="Mot" class="input" required>
+                </p>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <label for="grammatical_category">Catégorie grammaticale</label>
+                    <select name="grammatical_category" class="input" required>
+                        <option value="N">Nom</option>
+                        <option value="V">Verbe</option>
+                        <option value="J">Adjectif</option>
+                        <option value="A">Adverbe</option>
+                        <option value="Z" selected="selected">Nom propre</option>
+                    </select>
+                </p>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <select name="gender" class="input">
+                        <option value="">Genre (optionnel)</option>
+                        <option value="m">Masculin</option>
+                        <option value="f">Féminin</option>
+                    </select>
+                </p>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="plural"> Pas de pluriel
+                    </label>
+                </p>
+            </div>
+            <div class="field">
+                <p class="control">
+                    <textarea name="description" placeholder="Description" class="textarea"></textarea>
+                </p>
+            </div>
+            <div class="field is-grouped is-grouped-centered">
+                <p class="control">
+                    <button type="submit" class="button is-primary" style="z-index: 999;">Ajouter</button>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table pour afficher la liste des mots de vocabulaire -->
+<div class="box">
+    <h2 class="title">Liste des mots de vocabulaire :</h2>
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+            <tr>
+                <th>Langue</th>
+                <th>Mot</th>
+                <th>Catégorie grammaticale</th>
+                <th>Genre</th>
+                <th>Pluriel</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vocab in vocab_list %}
+            <tr>
+                <td>{{ vocab.Lang }}</td>
+                <td>{{ vocab.Word }}</td>
+                <td>{% set category_map = {
+                        'N': 'Nom',
+                        'V': 'Verbe',
+                        'J': 'Adjectif',
+                        'A': 'Adverbe',
+                        'Z': 'Nom propre'
+                    } %}
+                    {{ category_map[vocab.Grammatical_Category] }}</td>
+                <td>{{ vocab.Gender or "-" }}</td>
+                <td>{{ "Oui" if vocab.Plural else "Non" }}</td>
+                <td>{{ vocab.Description }}</td>
+                <td>
+                    <a href="/vocab/update/{{ vocab.id }}">Modifier</a> |
+                    <a href="/vocab/delete/{{ vocab.id }}">Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    <div class="lastelement"></div>
+{% endblock %}

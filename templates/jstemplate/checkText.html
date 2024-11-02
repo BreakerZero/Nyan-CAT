@@ -76,17 +76,7 @@ document.getElementById("editorjs").addEventListener("contextmenu", function(eve
     const blot = Quill.find(event.target);
 
     if (blot && blot.domNode.innerText.length) {
-        let offset = 0;
-        let found = false;
-
-        Array.from(quill.root.childNodes[0].childNodes).forEach(child => {
-            if (found) return;
-            if (child === blot.domNode) {
-                found = true;
-            } else {
-                offset += child ? child.length : 0;
-            }
-        });
+        let offset = quill.getIndex(blot); // Utilise l'index de la position exacte du blot dans le document
 
         const error = grammarErrors[offset];
         if (error && error.suggestions) {
@@ -95,7 +85,6 @@ document.getElementById("editorjs").addEventListener("contextmenu", function(eve
         }
     }
 });
-
 
 function showSuggestionsMenu(event, suggestions, index, errorLength) {
     const menu = document.createElement("div");
