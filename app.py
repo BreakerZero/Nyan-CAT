@@ -18,7 +18,7 @@ with app.app_context():
 	global server_started
 	if not server_started:
 		with start_lock:
-				update_added_txt_and_restart_lt(kill=False)
+			update_added_txt_and_restart_lt(kill=False)
 			server_started = True
 
 
