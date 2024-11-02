@@ -42,7 +42,6 @@ RUN pipx install --python python3 gunicorn \
 
 COPY / /app
 
-# Rendre le script init_database exécutable
 RUN chmod +x /app/init_database.sh
 
 EXPOSE 5000 8081

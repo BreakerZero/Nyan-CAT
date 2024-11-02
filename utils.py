@@ -175,9 +175,9 @@ def update_added_txt_and_restart_lt(kill=True):
 		if system == "Linux" or system == "Darwin":
 			if kill:
 				run(["pkill", "-f", "languagetool-server"])
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin", "--host", "0.0.0.0"])
 		elif system == "Windows":
 			if kill:
 				run(["taskkill", "/F", "/IM", "java.exe"], check=True)
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin", "--host", "0.0.0.0"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
 	except Exception: pass
