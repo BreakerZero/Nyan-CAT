@@ -49,6 +49,10 @@
             <div class="control">
                 <label class="label">Segment Actuel</label>
                 <div id="editorjs" {% if complete %}oninput="autocompletescript(event)" onkeypress="clear(event)"  {% endif %}></div>
+                <div id="grammar-check-spinner" style="text-align: center; margin-top: 10px;">
+                    <i class="fas fa-circle-notch fa-spin" style="color: #f2a0a0; font-size: 1.2em;"></i>
+                    <span style="font-size: 0.9em; color: #f2a0a0; margin-left: 5px;">vérification du texte...</span>
+                </div>
             </div>
             <div class="control">
                 <label class="label" id="ImageTranslatedLabel" style="display:none;">Image Traduite</label>

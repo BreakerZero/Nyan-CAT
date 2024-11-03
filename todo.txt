@@ -13,6 +13,6 @@
 
 canvas:
 -si l'image existe dans le document traduit, afficher l'image existante, sinon afficher l'image originale
-+création du tampon de duplication pour nettoyer le texte d'origine (rajouter option de taille + bouton d'activation)
+-création du tampon de duplication pour nettoyer le texte d'origine (rajouter option de taille + bouton d'activation)
 -implémenter fabric ou konva pour insérer les nouveaux segments de texte dans le canvas
 +gérer la synchronisation entre l'image modifiée dans le canvas et l'éditeur de texte (pour la synchronisation avec le serveur, et le fichier de sortie)

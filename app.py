@@ -37,34 +37,26 @@ def index():
 @app.route('/autocomplete', methods=["POST"])
 @login_required
 def autocomplete():
-	tosearch = request.json["begin"]
-	tosearch = str(tosearch).lower()
-	matching = Lexicon_fr.query.filter(Lexicon_fr.ortho.startswith(tosearch)).order_by(Lexicon_fr.freqlivres.desc(),
-																					   Lexicon_fr.freqfilms.desc()).limit(
-		2).all()
-	if len(matching) == 2:
-		if str(matching[0].ortho) == tosearch and str(matching[0].ortho) != str(matching[1].ortho):
-			if " " not in str(matching[1].ortho):
-				return jsonify({"result": matching[1].ortho})
-			else:
-				return jsonify({"result": " "})
-		elif str(matching[0].ortho) == tosearch and str(matching[0].ortho) == str(matching[1].ortho):
-			return jsonify({"result": " "})
-		else:
-			if " " not in str(matching[0].ortho):
-				return jsonify({"result": matching[0].ortho})
-			else:
-				return jsonify({"result": " "})
-	elif len(matching) == 1:
-		if str(matching[0].ortho) == tosearch:
-			return jsonify({"result": " "})
-		else:
-			if " " not in str(matching[0].ortho):
-				return jsonify({"result": matching[0].ortho})
-			else:
-				return jsonify({"result": " "})
-	else:
+	tosearch = request.json["begin"].strip().lower()
+
+	matching = Lexicon_fr.query.filter(
+		Lexicon_fr.ortho.startswith(tosearch)
+	).order_by(
+		Lexicon_fr.freqlivres.desc(),
+		Lexicon_fr.freqfilms.desc()
+	).limit(5).all()
+
+	suggestions = []
+	for match in matching:
+		word = match.ortho.lower()
+		if word != tosearch and " " not in word:
+			suggestions.append((word, match.freqlivres, match.freqfilms))
+
+	if not suggestions or suggestions[0][0] == tosearch:
 		return jsonify({"result": " "})
+
+	best_match = min(suggestions, key=lambda s: distance(tosearch, s[0]))
+	return jsonify({"result": best_match[0]})
 
 
 @app.route('/translate', methods=["POST"])  # chemin de l'API de traduction

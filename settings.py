@@ -24,6 +24,7 @@ from nyan.translateAPI import TranslatorAPI
 from flask_login import UserMixin, LoginManager, login_user, current_user, login_required, logout_user
 import html2text
 import threading
+from Levenshtein import distance
 
 LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
 LANGUAGETOOL_BASE_DIR = "languagetool"

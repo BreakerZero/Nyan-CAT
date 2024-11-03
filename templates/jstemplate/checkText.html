@@ -53,6 +53,8 @@ function checkGrammarInRealTime() {
     lastTextVersion = text;
 
     const projectId = {{ id }};
+    
+     document.getElementById("grammar-check-spinner").classList.add("visible");
 
     fetch('/check_grammar', {
         method: 'POST',
@@ -63,11 +65,13 @@ function checkGrammarInRealTime() {
     })
     .then(response => response.json())
     .then(data => {
+        document.getElementById("grammar-check-spinner").classList.remove("visible");
         if (text === lastTextVersion) {
             highlightErrors(data);
         }
     })
     .catch(error => {
+        document.getElementById("grammar-check-spinner").classList.remove("visible");
         console.error("Erreur lors de la vérification grammaticale :", error);
     });
 }

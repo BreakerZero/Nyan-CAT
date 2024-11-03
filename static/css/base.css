@@ -10710,12 +10710,6 @@ input[type="range"] {
 	width: 20%;
 }
 
-.grammar-error {
-    text-decoration: underline;
-    text-decoration-color: red;
-    cursor: pointer;
-}
-
 .suggestions-menu {
     position: absolute;
     background-color: white;
@@ -10732,4 +10726,20 @@ input[type="range"] {
 
 .suggestion-option:hover {
     background-color: #f0f0f0;
+}
+
+#grammar-check-spinner {
+	display: block;
+	opacity: 0;
+	transition: opacity 0.3s ease-in-out;
+	text-align: center;
+	margin-top: 10px;
+}
+
+#grammar-check-spinner.visible {
+	opacity: 1;
+}
+
+@keyframes spinner-border {
+	to { transform: rotate(360deg); }
 }
