@@ -1,18 +1,6 @@
--1. Ajouter minisearch.js
--2. Ajouter Owner dans la db/translation memory
--3. Créer dynamiquement le json à partir de la bdd (de type memoryid1.json)
--4. Purger le fichier lors de la déco
--5. Ajouter dynamiquement les segment traité lors de la session + ajouter à la bdd (vérifier que le segment n'existe pas déjà avant!)
--6. Appeller minisearch lorsque l'un des bouton next/prev est appuyé et remplir htmltoshow avec si score suffisant (+ placement au bon endroit + bon placement du curseur)
--7. Remplacer le modèle IA de Nyan-CAT par le modèle plus entrainé
 +8. Lors de l'ouverture d'un projet, créer un fichier csv (newsegments+idproject.csv) pour sauvegarder les nouveaux segments (les mêmes qui iront remplir la bdd) (vérifier encodage et échappement des caractères spéciaux)
 +9. Lors de la déco/fermeture navigateur, prendre le(ou les) fichier(s) csv et entrainer le modèle IA de Nyan-CAT (dans un autre thread) (cf. testrain.py dans Geek-Compagnon)
-10. Voir si il existe un moyen pour remplacer le type de balise par un autre en JS dans le keepstyle (cf. https://stackoverflow.com/questions/12984665/how-to-change-the-tag-name-of-an-element-in-javascript)
--11. Prise en compte du comportement traducteur du User dans le back de docxproject
-
-
-canvas:
--si l'image existe dans le document traduit, afficher l'image existante, sinon afficher l'image originale
--création du tampon de duplication pour nettoyer le texte d'origine (rajouter option de taille + bouton d'activation)
--implémenter fabric ou konva pour insérer les nouveaux segments de texte dans le canvas
-+gérer la synchronisation entre l'image modifiée dans le canvas et l'éditeur de texte (pour la synchronisation avec le serveur, et le fichier de sortie)
+?10. Voir si il existe un moyen pour remplacer le type de balise par un autre en JS dans le keepstyle (cf. https://stackoverflow.com/questions/12984665/how-to-change-the-tag-name-of-an-element-in-javascript)
+11+gérer la synchronisation entre l'image modifiée dans le canvas et l'éditeur de texte (pour la synchronisation avec le serveur, et le fichier de sortie)
+debug à long terme
+insertion complexe image
