@@ -32,8 +32,7 @@ services:
     image: crazymax/fail2ban:latest
     volumes:
       - nginx-logs:/var/log/nginx  # Même volume de logs
-      - /volume1/Web/fail2ban.conf:/etc/fail2ban/fail2ban.conf
-      - /volume1/Web/jail.conf:/etc/fail2ban/jail.conf
+      - /volume1/Web/fail2ban:/etc/fail2ban/
     cap_add:
       - NET_ADMIN  # Permettre à fail2ban de gérer les règles réseau
     depends_on:
