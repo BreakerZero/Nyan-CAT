@@ -121,7 +121,7 @@ async function AddCurrentSegment(miniSearch) {
     const translatedText = document.getElementsByClassName("ql-editor")[1].innerText;
     const resultFromMemory = miniSearch.search(editorText);
     
-    if (resultFromMemory.length > 0 && editorText !== resultFromMemory[0].Source && translatedText !== "\n") {
+    if (resultFromMemory.length === 0 && translatedText !== "\n") {
         miniSearch.add({
             id: miniSearch.length + 1,
             Source_Lang: "{{ project.Source_Lang }}",

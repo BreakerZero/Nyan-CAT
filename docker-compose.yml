@@ -24,17 +24,17 @@ services:
     volumes:
       - /volume1/Web/nginx.conf:/etc/nginx/nginx.conf
       - /usr/builtin/etc/certificate:/etc/nginx/ssl
-      - nginx-logs:/var/log/nginx  # Partager les logs avec fail2ban
+      - nginx-logs:/var/log/nginx
     depends_on:
       - nyancat
 
   fail2ban:
     image: crazymax/fail2ban:latest
     volumes:
-      - nginx-logs:/var/log/nginx  # Même volume de logs
+      - nginx-logs:/var/log/nginx
       - /volume1/Web/fail2ban:/etc/fail2ban/
     cap_add:
-      - NET_ADMIN  # Permettre à fail2ban de gérer les règles réseau
+      - NET_ADMIN
     depends_on:
       - nginx
 
