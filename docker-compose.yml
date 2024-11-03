@@ -3,6 +3,7 @@ services:
   nyancat:
     build: .
     image: nyan-cat:latest
+    shm_size: '256m'
     ports:
       - "7777:5000"
     environment:
