@@ -4,3 +4,5 @@
 11+gérer la synchronisation entre l'image modifiée dans le canvas et l'éditeur de texte (pour la synchronisation avec le serveur, et le fichier de sortie)
 debug à long terme
 insertion complexe image
+
+temps estimé pour finir la traduction

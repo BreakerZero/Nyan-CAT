@@ -246,4 +246,14 @@ async function sendTranslatedData(block) {
         console.error('Error sending translated data:', error);
     }
 }
+
+function copyQuillText() {
+    const editor = document.querySelector('.ql-editor');
+    const tempTextarea = document.createElement('textarea');
+    tempTextarea.value = editor.innerText;  // Copie uniquement le texte brut
+    document.body.appendChild(tempTextarea);
+    tempTextarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempTextarea);
+}
 </script>

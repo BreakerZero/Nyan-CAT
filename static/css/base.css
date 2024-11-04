@@ -358,7 +358,7 @@ footer {
 }
 
 .hero.is-primary a:not(.button):not(.dropdown-item):not(.tag):not(.pagination-link.is-current), .hero.is-primary .hero-head strong {
-	color: #f2a0a0 !important;
+	color: #f2a0a0;
 }
 
 /*! bulma.io v0.9.3 | MIT License | github.com/jgthms/bulma */
@@ -10185,10 +10185,6 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 	background-color: #f83e3e;
 	color: #fff;
 }
-.hero.is-primary a:not(.button):not(.dropdown-item):not(.tag):not(.pagination-link.is-current),
-.hero.is-primary strong {
-	color: inherit;
-}
 .hero.is-primary .title {
 	color: #fff;
 }
@@ -10742,4 +10738,8 @@ input[type="range"] {
 
 @keyframes spinner-border {
 	to { transform: rotate(360deg); }
+}
+
+.ql-editor p a {
+	color: dodgerblue !important;
 }

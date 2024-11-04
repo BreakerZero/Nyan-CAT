@@ -45,26 +45,39 @@ class TranslatorAPI:
 		if provider == "DeepL":
 			context_suppl = ', '.join([context.Text for context in Context.query.filter_by(Active=True).with_entities(Context.Text).all()])
 			clean_text = re.sub(r'!\[\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', text)
-			if apikey != "":  # si une clé est saisie
-				#suppl context
+			if apikey != "":
+
 				if str(formality) == "informal":
 					formality = "less"
 				elif str(formality) == "formal":
 					formality = "more"
 				elif str(formality) is None:
 					formality = "default"
+
 				translator = deepl.Translator(apikey)
-				dictionnary = dict(item.split("\t") for item in formatedGlossary.split("\n"))
+
+				words_in_text = set(clean_text.split())
+				filtered_glossary = {key: value for key, value in (item.split("\t") for item in formatedGlossary.split("\n")) if key in words_in_text}
+
+				if not filtered_glossary:
+					first_entry = next(iter(item.split("\t") for item in formatedGlossary.split("\n")), None)
+					if first_entry:
+						filtered_glossary[first_entry[0]] = first_entry[1]
+					else:
+						filtered_glossary["Hi!"] = "Salut!"
+
+
 				g = translator.create_glossary(
 					"My glossary",
 					source_lang="EN",
 					target_lang="FR",
-					entries=dictionnary,
+					entries=filtered_glossary,
 				)
 				context = f'global context: {context_suppl}, previous sentences : {prev_paragraph}, next sentences : {next_paragraph}'
+
 				r = translator.translate_text(text=clean_text, source_lang=source, target_lang=target, glossary=g, formality=formality, context=context)
 				return str(r)
-			else:  # si aucune clé n'a été saisie
+			else:
 				translator = PersonalDeepl(request=Request())
 				glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=[source.upper(), target.upper()])
 				glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language=source, target_language=target)

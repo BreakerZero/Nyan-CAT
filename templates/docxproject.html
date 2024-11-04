@@ -38,7 +38,7 @@
         <div class="column is-half">
             <div class="control">
                 <label class="label">Segment Actuel</label>
-                <div id="disablededitorjs" {% if complete %} oninput="autocompletescript(event)" onkeypress="clear(event)" {% endif %}></div>
+                <div id="disablededitorjs" onclick="copyQuillText()"></div>
             </div>
             <div class="control">
                 <label class="label" id="ImageOriginalLabel" style="display:none;">Image Originale</label>
