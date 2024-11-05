@@ -95,6 +95,7 @@ function manageCanvasDisplay() {
         showTranslatedCanvas();
     } else if (imgElementOriginal) {
         loadCanvasWithImage(imgElementOriginal, "translatedImageCanvas");
+        showTranslatedCanvas();
     }
 
     adjustCanvasWidth("translatedImageCanvas", document.getElementsByClassName("ql-editor")[1]);
