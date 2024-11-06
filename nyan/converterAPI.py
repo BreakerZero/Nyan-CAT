@@ -137,33 +137,39 @@ class ConverterAPI:
                 Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
                 self.add_hyperlink(Docx.paragraphs[ParaPosition + ParaInHtml], link_text, href)
             else:
-                Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
-                Docx.paragraphs[ParaPosition + ParaInHtml].alignment = tempdocx.paragraphs[ParaInHtml].alignment
-                Docx.paragraphs[ParaPosition + ParaInHtml].style = tempdocx.paragraphs[ParaInHtml].style
-                Docx.paragraphs[ParaPosition + ParaInHtml].style.name = tempdocx.paragraphs[ParaInHtml].style.name
-                Docx.paragraphs[ParaPosition + ParaInHtml].style.base_style = tempdocx.paragraphs[ParaInHtml].style.base_style
-                Docx.paragraphs[ParaPosition + ParaInHtml].style.priority = tempdocx.paragraphs[ParaInHtml].style.priority
-                Docx.paragraphs[ParaPosition + ParaInHtml].style.style_id = tempdocx.paragraphs[ParaInHtml].style.style_id
-                Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.left_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.left_indent
-                Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.right_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.right_indent
+                found_img_in_para = False
+                for run in Docx.paragraphs[ParaPosition + ParaInHtml].runs:
+                    if run.element.xpath('.//w:drawing') or run.element.xpath('.//a:blip/../..'):
+                        found_img_in_para = True
+                if not found_img_in_para:
+                    Docx.paragraphs[ParaPosition + ParaInHtml].text = ""
+                    Docx.paragraphs[ParaPosition + ParaInHtml].alignment = tempdocx.paragraphs[ParaInHtml].alignment
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style = tempdocx.paragraphs[ParaInHtml].style
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style.name = tempdocx.paragraphs[ParaInHtml].style.name
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style.base_style = tempdocx.paragraphs[ParaInHtml].style.base_style
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style.priority = tempdocx.paragraphs[ParaInHtml].style.priority
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style.style_id = tempdocx.paragraphs[ParaInHtml].style.style_id
+                    Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.left_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.left_indent
+                    Docx.paragraphs[ParaPosition + ParaInHtml].paragraph_format.right_indent = tempdocx.paragraphs[ParaInHtml].paragraph_format.right_indent
 
             for idx, run in enumerate(tempdocx.paragraphs[ParaInHtml].runs):
                 if len(tempdocx.paragraphs[ParaInHtml].runs) > len(Docx.paragraphs[ParaPosition + ParaInHtml].runs):
                     Docx.paragraphs[ParaPosition + ParaInHtml].add_run()
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].text = run.text
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].bold = run.bold
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].italic = run.italic
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].underline = run.underline
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.color.rgb = run.font.color.rgb
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].style.name = run.style.name
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.name = run.font.name
-                Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.size = run.font.size
+                if not run.element.xpath('.//w:drawing') or run.element.xpath('.//a:blip/../..'):
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].text = run.text
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].bold = run.bold
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].italic = run.italic
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].underline = run.underline
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.color.rgb = run.font.color.rgb
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].style.name = run.style.name
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.name = run.font.name
+                    Docx.paragraphs[ParaPosition + ParaInHtml].runs[idx].font.size = run.font.size
 
-                images = soup.find_all('img')
-                if len(images) > 0:
-                    img = images[0]
-                    img_data = img['src'].split('base64,')[-1]
-                    self.insert_image_from_base64(Docx, img_data, ParaPosition, imgisbefore)
+                    images = soup.find_all('img')
+                    if len(images) > 0:
+                        img = images[0]
+                        img_data = img['src'].split('base64,')[-1]
+                        self.insert_image_from_base64(Docx, img_data, ParaPosition, imgisbefore)
             Docx.save(SaveName)
 
 

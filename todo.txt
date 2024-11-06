@@ -5,5 +5,6 @@
 debug à long terme
 insertion complexe image
 
-temps estimé pour finir la traduction
-lien interne au fichier ?
+fichier json qui n'existe pas au premier login ?
+gestion lien interne au fichier ?
+lien interne : h1 ? h2 ? h3 ?
