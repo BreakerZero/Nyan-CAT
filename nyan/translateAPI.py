@@ -71,6 +71,9 @@ class TranslatorAPI:
 					else:
 						filtered_glossary["Hi!"] = "Salut!"
 
+				existing_glossaries = translator.list_glossaries()
+				for glos in existing_glossaries:
+					translator.delete_glossary(glos.glossary_id)
 
 				g = translator.create_glossary(
 					"My glossary",
