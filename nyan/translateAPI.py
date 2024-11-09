@@ -56,12 +56,12 @@ class TranslatorAPI:
 
 				translator = deepl.Translator(apikey)
 
-				clean_text = re.sub(r'[^\w\s]', '', clean_text).lower()
+				gloassary_clean_text = re.sub(r'[^\w\s]', '', clean_text).lower()
 
 				filtered_glossary = {
 					key: value
 					for key, value in (item.split("\t") for item in formatedGlossary.split("\n"))
-					if key.lower() in clean_text
+					if key.lower() in gloassary_clean_text
 				}
 
 				if not filtered_glossary:
