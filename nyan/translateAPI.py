@@ -56,8 +56,13 @@ class TranslatorAPI:
 
 				translator = deepl.Translator(apikey)
 
-				words_in_text = set(clean_text.split())
-				filtered_glossary = {key: value for key, value in (item.split("\t") for item in formatedGlossary.split("\n")) if key in words_in_text}
+				clean_text = re.sub(r'[^\w\s]', '', clean_text).lower()
+
+				filtered_glossary = {
+					key: value
+					for key, value in (item.split("\t") for item in formatedGlossary.split("\n"))
+					if key.lower() in clean_text
+				}
 
 				if not filtered_glossary:
 					first_entry = next(iter(item.split("\t") for item in formatedGlossary.split("\n")), None)

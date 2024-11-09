@@ -8,3 +8,4 @@ insertion complexe image
 fichier json qui n'existe pas au premier login ?
 gestion lien interne au fichier ?
 lien interne : h1 ? h2 ? h3 ?
+doublon texte lorsque trop rapide, vider editeur après envoie sur serveur ?
