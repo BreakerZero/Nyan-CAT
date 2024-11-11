@@ -121,6 +121,7 @@ def get_context_paragraphs(i, parasin, direction="before"):
 
 
 
+
 def Glos():  # fonction formatage glossaire
 	formatedGlo = ""
 	i = 0
@@ -181,3 +182,63 @@ def update_added_txt_and_restart_lt(kill=True):
 				run(["taskkill", "/F", "/IM", "java.exe"], check=True)
 			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
 	except Exception: pass
+
+
+def start_celery_worker():
+		if system in ["Linux", "Darwin"]:
+			# Linux ou macOS
+			command = ["celery", "-A", "app.celery", "worker", "--loglevel=debug"]
+			Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # Détache le processus
+		elif system == "Windows":
+			# Windows
+			command = ["celery", "-A", "app.celery", "worker", "--loglevel=debug", "--pool=solo"]
+			Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)  # Ouvre une nouvelle console
+
+
+def signal_handler(sig, frame):
+	print('You pressed Ctrl+C!')
+	sys.exit(0)
+
+
+def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary = ""):
+	translation = None
+	numberoftries = 0
+	proxy = None
+
+	while translation is None and numberoftries < max_retries:
+		numberoftries += 1
+		time.sleep(0.5)
+
+		# Get a proxy from the queue
+		try:
+			proxy = proxies_queue.get_nowait()
+		except:
+			print(f"No proxies available for paragraph {index}")
+			break
+
+		translator = PersonalDeepl(request=Request(proxy))
+		glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
+		glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
+		try:
+			translation = translator.translate(
+				text=para_text,
+				destination_language="fr",
+				source_language="en",
+				formality='informal',
+				glossary=glossary,
+				prev_paragraph=prev_paragraph,
+				next_paragraph=next_paragraph
+			).result
+		except requests.exceptions.Timeout:
+			print(f"Request timed out for paragraph {index}.")
+		except Exception as e:
+			print(f'Error for paragraph {index}: {str(e)}')
+		finally:
+			# Put the proxy back into the queue
+			proxies_queue.put(proxy)
+
+	if translation is None:
+		print(f"Failed to translate paragraph {index} after {max_retries} attempts.")
+	if translation == '':
+		return index, para_text, proxy
+	return index, translation, proxy

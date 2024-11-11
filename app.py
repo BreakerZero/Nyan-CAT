@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from utils import *
 
-
 @app.errorhandler(413)
 def too_large(e):
 	return "Fichier trop volumineux", 413
@@ -23,6 +22,91 @@ with app.app_context():
 			except Exception as e:
 				pass
 			server_started = True
+
+@celery.task(bind=True)
+def pre_translate_docx(self, projectid):
+
+	redis_client.rpush(f"project:{projectid}:tasks", self.request.id)
+
+	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(projectid))
+
+	files = [f for f in os.listdir(project_folder) if f.endswith('.docx')]
+	if not files or len(files) < 2:
+		raise FileNotFoundError("Deux fichiers DOCX sont requis pour déterminer l'entrée et la sortie.")
+
+	# Trie les fichiers pour identifier l’entrée et la sortie
+	input_file = min(files, key=len)
+	output_file = max(files, key=len)
+
+	# Crée les chemins complets pour les fichiers d’entrée et de sortie
+	input_path = os.path.join(project_folder, input_file)
+	output_path = os.path.join(project_folder, output_file)
+
+	# Charge la liste de proxies
+	with open(PROXY_PATH, "r") as f:
+		listofproxies = f.read().split("\n")
+
+	if not listofproxies:
+		print("No valid proxies available.")
+		exit()
+
+	# Crée une queue sécurisée pour les proxies
+	proxies_queue = Queue()
+	for proxy in listofproxies:
+		proxies_queue.put(proxy)
+
+	# Charge le document d’entrée
+	docin = docx.Document(input_path)
+	parasin = docin.paragraphs
+
+	# Charge ou crée le document de sortie
+	try:
+		docout = docx.Document(output_path)
+	except:
+		docout = docx.Document()
+
+	# Assure que le document de sortie a le même nombre de paragraphes que l’entrée
+	while len(docout.paragraphs) < len(parasin):
+		docout.add_paragraph('')
+
+	length = len(parasin)
+
+	# Locks pour la sécurité des threads
+	doc_lock = threading.Lock()
+	file_lock = threading.Lock()
+
+	# Function to process each paragraph
+	def process_paragraph(i):
+		para = parasin[i]
+		temp = para.text
+
+		if temp.strip() == "" or temp.strip() in ignored_text:
+			pass
+		elif docout.paragraphs[i].text != "" and docout.paragraphs[i].text != temp:
+			# Paragraph already translated
+			pass
+		else:
+			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
+			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
+			index, translation, proxy = translate_paragraph(i, temp, proxies_queue, max_retries=float('inf'), prev_paragraph=prev_paragraph, next_paragraph=next_paragraph, formatedGlossary=formatedGlossary)
+			print("Traduction : " + translation)
+			if translation:
+				with doc_lock:
+					docout.paragraphs[i].text = translation
+				with file_lock:
+					docout.save(output_path)
+
+
+	# Use ThreadPoolExecutor to manage threads
+	with ThreadPoolExecutor(max_workers=15) as executor:
+		futures = [executor.submit(process_paragraph, i) for i in range(length)]
+		for i, future in enumerate(as_completed(futures)):
+			# Met à jour l’état de progression
+			self.update_state(state='PROGRESS', meta={'current': i + 1, 'total': length})
+			future.result()  # Récupère les exceptions éventuelles
+
+	# Retourne le statut final
+	return {'status': 'Task completed!', 'output_file': output_path}
 
 
 @app.route('/favicon.ico')
@@ -731,6 +815,73 @@ def update_vocab(id):
 		return redirect("/vocab")
 
 	return render_template('update_vocab.html', vocab_entry=vocab_entry)
+
+
+@app.route('/pretranslate/<int:project_id>', methods=['GET'])
+@login_required
+def pretranslate(project_id):
+
+	# Vérifie si le projet existe et que l'utilisateur est bien le propriétaire
+	project = Project.query.get(project_id)
+	if not project:
+		return jsonify({"error": "Projet non trouvé"}), 404
+
+	# Vérifie que l'extension est bien "docx"
+	if project.Extension.lower() != "docx":
+		return jsonify({"error": "Le projet n'est pas au format DOCX"}), 400
+
+	# Vérifie que l'utilisateur connecté est le propriétaire du projet
+	if project.Owner != str(current_user.id):
+		return jsonify({"error": "Vous n'êtes pas autorisé à lancer cette tâche"}), 403
+	# Lance la tâche de pré-traduction
+	task = pre_translate_docx.delay(project_id)
+
+	return jsonify({'task_id': task.id}), 202
+
+@app.route('/getprojecttaskstatus/<int:project_id>', methods=['GET'])
+@login_required
+def get_last_task_for_project(project_id):
+	last_task_id = redis_client.lindex(f"project:{project_id}:tasks", -1)
+
+	if not last_task_id:
+		return {"error": "Aucune tâche trouvée pour ce projet."}
+
+	task = pre_translate_docx.AsyncResult(last_task_id.decode('utf-8'))
+	response = {
+		"task_id": last_task_id.decode('utf-8'),
+		"state": task.state,
+		"info": task.info
+	}
+	return response
+
+@app.route('/download_file/<int:project_id>/<file_type>', methods=['GET'])
+@login_required
+def download_file(project_id, file_type):
+	project = Project.query.get_or_404(project_id)
+	if project.Owner != str(current_user.id):
+		abort(403)
+
+	# Détermine le dossier du projet
+	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(project_id))
+	files = [f for f in os.listdir(project_folder) if f.endswith('.docx')]
+
+	if len(files) < 2:
+		return {"error": "Les fichiers requis n'existent pas pour ce projet."}, 404
+
+	# Identifier le fichier original et le fichier traduit
+	input_file = min(files, key=len)
+	output_file = max(files, key=len)
+
+	# Sélectionner le fichier à télécharger
+	if file_type == 'original':
+		file_path = os.path.join(project_folder, input_file)
+	elif file_type == 'translated':
+		file_path = os.path.join(project_folder, output_file)
+	else:
+		return {"error": "Type de fichier invalide."}, 400
+
+	# Télécharger le fichier
+	return send_file(file_path, as_attachment=True)
 
 
 if __name__ == "__main__":

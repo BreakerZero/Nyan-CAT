@@ -10,7 +10,7 @@
         <div class="columns is-multiline is-fullheight is-fullwidth is-centered">
           {% if Projectlist %}
             {% for project in Projectlist %}
-            <div class="column toaster is-narrow">
+            <div class="column toaster is-narrow" id="project-{{ project.id }}">
               {% set project_url = url_for('project' + project.Type + project.Extension, id=project.id) %}
               <a href="{{ project_url }}">
                 <span class="icon is-large is-left">
@@ -26,14 +26,85 @@
                 </span>
                 <p style="font-size: 1.5em;">{{ project.Name }}</p>
                 <p>{{ project.Source_Lang }}-{{ project.Target_Lang }}</p>
-                <p><progress class="progress is-small is-primary" value="{{ project.Advancement *100 }}" max="100"></progress></p>
+                <p><progress class="progress is-small is-primary" value="{{ project.Advancement * 100 }}" max="100"></progress></p>
               </a>
+
+              {% if project.Extension == "docx" %}
+                <p>Prétraduction :</p>
+                <progress id="task-progress-{{ project.id }}" class="progress is-small" max="100"></progress>
+                <span hidden id="task-status-url-{{ project.id }}" data-url="{{ url_for('get_last_task_for_project', project_id=project.id) }}"></span>
+              {% endif %}
+                <div class="dropdown is-right">
+                  <div class="dropdown-trigger">
+                    <button onclick="toggleOptions({{ project.id }})" class="button is-small" aria-haspopup="true" aria-controls="dropdown-menu">
+                      <span class="icon"><i class="fas fa-ellipsis-v"></i></span>
+                    </button>
+                  </div>
+                    
+                  <div id="options-{{ project.id }}" class="dropdown-menu" role="menu" style="display: none;">
+                    <div class="dropdown-content">
+                      <a href="{{ url_for('download_file', project_id=project.id, file_type='original') }}" class="dropdown-item">Télécharger l'original</a>
+                      <a href="{{ url_for('download_file', project_id=project.id, file_type='translated') }}" class="dropdown-item">Télécharger le traduit</a>
+                      {% if project.Extension == "docx" %}<a onclick="startPreTranslation({{ project.id }})" class="dropdown-item">Lancer la prétraduction</a>{% endif %}
+                    </div>
+                  </div>
+                </div>
             </div>
             {% endfor %}
           {% endif %}
         </div>
       </div>
-      </section>
+    </section>
   </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function updateTaskProgress(projectId, url) {
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.state === 'PROGRESS') {
+            let progress = (data.info.current / data.info.total) * 100;
+            document.getElementById(`task-progress-${projectId}`).value = progress;
+          } else if (data.state === 'SUCCESS') {
+            document.getElementById(`task-progress-${projectId}`).value = 100;
+          } else {
+            document.getElementById(`task-progress-${projectId}`).value = 0;
+          }
+        })
+        .catch(error => console.error('Erreur lors de la récupération du statut de la tâche:', error));
+    }
+
+    {% for project in Projectlist %}
+      {% if project.Extension == "docx" %}
+        const projectId = {{ project.id }};
+        const statusUrl = document.getElementById(`task-status-url-${projectId}`).dataset.url;
+          
+        updateTaskProgress(projectId, statusUrl);
+          
+        setInterval(() => updateTaskProgress(projectId, statusUrl), 10000);
+      {% endif %}
+    {% endfor %}
+  });
+
+  function startPreTranslation(projectId) {
+    fetch(`/pretranslate/${projectId}`, { method: 'GET' })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('Prétraduction lancée pour le projet ' + projectId);
+        } else {
+          console.error('Erreur lors du lancement de la prétraduction:', data.error);
+        }
+      })
+      .catch(error => console.error('Erreur AJAX:', error));
+  }
+  
+  function toggleOptions(projectId) {
+    const optionsMenu = document.getElementById(`options-${projectId}`);
+    const isVisible = optionsMenu.style.display === 'block';
+    optionsMenu.style.display = isVisible ? 'none' : 'block';
+  }
+</script>
 {% endblock %}
