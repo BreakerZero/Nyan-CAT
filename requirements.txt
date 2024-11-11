@@ -19,3 +19,4 @@ python-levenshtein==0.26.1
 celery==5.4.0
 pandas==2.2.3
 redis==5.2.0
+psutil==6.1.0

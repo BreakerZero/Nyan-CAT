@@ -11,6 +11,8 @@ import base64
 import io
 from io import StringIO
 import os
+import sys
+import psutil
 import time
 import re
 import platform
@@ -34,7 +36,6 @@ import redis
 from celery.result import AsyncResult
 from celery import shared_task
 from queue import Queue
-import sys
 
 LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
 LANGUAGETOOL_BASE_DIR = "languagetool"

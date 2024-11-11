@@ -45,7 +45,14 @@
                     <div class="dropdown-content">
                       <a href="{{ url_for('download_file', project_id=project.id, file_type='original') }}" class="dropdown-item">Télécharger l'original</a>
                       <a href="{{ url_for('download_file', project_id=project.id, file_type='translated') }}" class="dropdown-item">Télécharger le traduit</a>
-                      {% if project.Extension == "docx" %}<a onclick="startPreTranslation({{ project.id }})" class="dropdown-item">Lancer la prétraduction</a>{% endif %}
+                        {% if project.Extension == "docx" %}
+                          <a id="pretranslate-link-{{ project.id }}" onclick="startPreTranslation({{ project.id }})" class="dropdown-item">
+                            <span>Lancer la prétraduction</span>
+                            <span id="pretranslate-check-{{ project.id }}" class="icon" style="display: none;">
+                              <i class="fas fa-check-circle has-text-success"></i>
+                            </span>
+                          </a>
+                        {% endif %}
                     </div>
                   </div>
                 </div>
@@ -92,8 +99,9 @@
     fetch(`/pretranslate/${projectId}`, { method: 'GET' })
       .then(response => response.json())
       .then(data => {
-        if (data.success) {
-          console.log('Prétraduction lancée pour le projet ' + projectId);
+        if (data.task_id) {
+          document.getElementById(`pretranslate-check-${projectId}`).style.display = 'inline';
+          document.getElementById(`pretranslate-link-${projectId}`).classList.add('has-text-success');
         } else {
           console.error('Erreur lors du lancement de la prétraduction:', data.error);
         }

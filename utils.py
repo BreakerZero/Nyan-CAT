@@ -171,7 +171,6 @@ def update_added_txt_and_restart_lt(kill=True):
 			f.write("\n")
 			f.write("\n".join(entries))  # Ajouter les mots du vocab
 
-	# Redémarrer LanguageTool en fonction de l'OS
 	try:
 		if system == "Linux" or system == "Darwin":
 			if kill:
@@ -185,19 +184,24 @@ def update_added_txt_and_restart_lt(kill=True):
 
 
 def start_celery_worker():
-		if system in ["Linux", "Darwin"]:
-			# Linux ou macOS
-			command = ["celery", "-A", "app.celery", "worker", "--loglevel=debug"]
-			Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # Détache le processus
-		elif system == "Windows":
-			# Windows
-			command = ["celery", "-A", "app.celery", "worker", "--loglevel=debug", "--pool=solo"]
-			Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)  # Ouvre une nouvelle console
+	system = platform.system()
 
+	# Vérifie si un worker Celery est déjà en cours d'exécution
+	for process in psutil.process_iter(['name', 'cmdline']):
+		# Vérifie si le processus est un worker Celery avec les arguments spécifiques
+		if "celery" in process.info['name'] and "-A app.celery worker" in ' '.join(process.info['cmdline']):
+			print("Un worker Celery est déjà en cours d'exécution.")
+			return  # Termine la fonction si un worker existe déjà
 
-def signal_handler(sig, frame):
-	print('You pressed Ctrl+C!')
-	sys.exit(0)
+	# Si aucun worker actif n'est trouvé, démarre un nouveau worker Celery
+	if system in ["Linux", "Darwin"]:
+		# Linux ou macOS
+		command = ["celery", "-A", "app.celery", "worker", "--loglevel=info"]
+		Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	elif system == "Windows":
+		# Windows
+		command = ["celery", "-A", "app.celery", "worker", "--loglevel=info", "--pool=solo"]
+		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)  # Ouvre une nouvelle console
 
 
 def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary = ""):
