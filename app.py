@@ -859,32 +859,25 @@ def update_vocab(id):
 @app.route('/pretranslate/<int:project_id>', methods=['GET'])
 @login_required
 def pretranslate(project_id):
-	# Vérifie si le projet existe et que l'utilisateur est bien le propriétaire
 	project = Project.query.get(project_id)
 	if not project:
 		return jsonify({"error": "Projet non trouvé"}), 404
 
-	# Vérifie que l'extension est bien "docx"
 	if project.Extension.lower() != "docx":
 		return jsonify({"error": "Le projet n'est pas au format DOCX"}), 400
 
-	# Vérifie que l'utilisateur connecté est le propriétaire du projet
 	if project.Owner != str(current_user.id):
 		return jsonify({"error": "Vous n'êtes pas autorisé à lancer cette tâche"}), 403
 
-	# Récupère l'ID de la dernière tâche pour ce projet depuis Redis
 	last_task_id = redis_client.lindex(f"project:{project_id}:tasks", -1)
 
-	# Vérifie l'état de la dernière tâche
 	if last_task_id:
 		last_task = celery.AsyncResult(last_task_id.decode('utf-8'))
 		if last_task.state in ['PENDING', 'STARTED', 'PROGRESS']:
 			return jsonify({"error": "Une tâche de prétraduction est déjà en cours pour ce projet."}), 400
 
-	# Lance la nouvelle tâche de pré-traduction
 	task = pre_translate_docx.delay(project_id)
 
-	# Enregistre l'ID de la nouvelle tâche dans Redis pour suivre son statut
 	redis_client.rpush(f"project:{project_id}:tasks", task.id)
 
 	return jsonify({'task_id': task.id}), 202
