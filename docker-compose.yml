@@ -16,6 +16,8 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
     tty: true
+    depends_on:
+      - redis
 
   nginx:
     image: nginx:latest
@@ -39,5 +41,14 @@ services:
     depends_on:
       - nginx
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis-stack-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
 volumes:
   nginx-logs:
+  redis-data:
