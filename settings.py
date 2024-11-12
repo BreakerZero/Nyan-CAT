@@ -32,6 +32,7 @@ import html2text
 import threading
 from Levenshtein import distance
 from celery import Celery
+from celery.schedules import crontab
 import redis
 from celery.result import AsyncResult
 from celery import shared_task
@@ -56,8 +57,18 @@ app.config['UPLOAD_EXTENSIONS'] = ['.png', '.jpg', '.jpeg', '.pdf', '.docx', '.d
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 500  # max 500Mo
 db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+celery = Celery(app.name)
+celery.conf.update(
+    broker_url='redis://localhost:6379/0',
+    result_backend='redis://localhost:6379/0',
+    beat_schedule={
+        'update-proxies-every-day': {
+            'task': 'app.update_proxies',
+            'schedule': crontab(minute='0', hour='0'),
+        },
+    },
+    timezone='UTC'
+)
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 start_lock = threading.Lock()
 server_started = False

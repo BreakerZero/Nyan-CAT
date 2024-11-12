@@ -10,3 +10,7 @@ gestion lien interne au fichier ?
 lien interne : h1 ? h2 ? h3 ?
 doublon texte lorsque trop rapide, bloquer bouton jusqu'à réponse sur serveur ?
 diminuer temps de traitement passage paragraphe à l'autre
+
+prétrad:
+la queue de proxy ne se vide jamais
+le cron fonctionne, mais pas de parallélisation sur windows ?

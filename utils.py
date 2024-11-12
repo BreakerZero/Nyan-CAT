@@ -201,7 +201,35 @@ def start_celery_worker():
 	elif system == "Windows":
 		# Windows
 		command = ["celery", "-A", "app.celery", "worker", "--loglevel=info", "--pool=solo"]
-		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)  # Ouvre une nouvelle console
+		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+def start_celery_beat():
+	system = platform.system()
+
+	# Vérifie si un processus celery beat est déjà en cours d'exécution
+	for process in psutil.process_iter(['name', 'cmdline']):
+		# Vérifie si le processus est un processus celery beat avec les arguments spécifiques
+		if "celery" in process.info['name'] and "-A app.celery beat" in ' '.join(process.info['cmdline']):
+			print("Une instance de celery beat est déjà en cours d'exécution.")
+			return  # Termine la fonction si celery beat est déjà en cours
+
+	# Si aucun processus beat n'est trouvé, lance un nouveau processus celery beat
+	if system in ["Linux", "Darwin"]:
+		# Linux ou macOS
+		command = ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
+		Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	elif system == "Windows":
+		# Windows
+		command = ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
+		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+def restart_celery_workers():
+	for process in psutil.process_iter(['name', 'cmdline']):
+		if "celery" in process.info['name'] and "-A app.celery worker" in ' '.join(process.info['cmdline']):
+			process.terminate()
+			process.wait()
+
+	start_celery_worker()
 
 
 def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary = ""):
@@ -234,9 +262,11 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 				next_paragraph=next_paragraph
 			).result
 		except requests.exceptions.Timeout:
-			print(f"Request timed out for paragraph {index}.")
+			pass
+			#print(f"Request timed out for paragraph {index}.")
 		except Exception as e:
-			print(f'Error for paragraph {index}: {str(e)}')
+			pass
+			#print(f'Error for paragraph {index}: {str(e)}')
 		finally:
 			# Put the proxy back into the queue
 			proxies_queue.put(proxy)
@@ -246,3 +276,11 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 	if translation == '':
 		return index, para_text, proxy
 	return index, translation, proxy
+
+def test_proxy(proxy):
+	try:
+		response = requests.get("https://google.com/", proxies={"https": f"http://{proxy}"}, timeout=5)
+		print(response)
+		return response.status_code in [200, 429]
+	except requests.RequestException:
+		return False

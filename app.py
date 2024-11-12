@@ -15,6 +15,7 @@ def load_user(user_id):
 with app.app_context():
 	formatedGlossary = Glos()
 	start_celery_worker()
+	start_celery_beat()
 	global server_started
 	if not server_started:
 		with start_lock:
@@ -26,7 +27,6 @@ with app.app_context():
 
 @celery.task(bind=True)
 def pre_translate_docx(self, projectid):
-
 	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(projectid))
 
 	files = [f for f in os.listdir(project_folder) if f.endswith('.docx')]
@@ -40,19 +40,6 @@ def pre_translate_docx(self, projectid):
 	# Crée les chemins complets pour les fichiers d’entrée et de sortie
 	input_path = os.path.join(project_folder, input_file)
 	output_path = os.path.join(project_folder, output_file)
-
-	# Charge la liste de proxies
-	with open(PROXY_PATH, "r") as f:
-		listofproxies = f.read().split("\n")
-
-	if not listofproxies:
-		print("No valid proxies available.")
-		exit()
-
-	# Crée une queue sécurisée pour les proxies
-	proxies_queue = Queue()
-	for proxy in listofproxies:
-		proxies_queue.put(proxy)
 
 	# Charge le document d’entrée
 	docin = docx.Document(input_path)
@@ -74,8 +61,24 @@ def pre_translate_docx(self, projectid):
 	doc_lock = threading.Lock()
 	file_lock = threading.Lock()
 
+	# Fonction pour recharger les proxies et les mettre dans une queue
+	def load_proxies():
+		with open(PROXY_PATH, "r") as f:
+			listofproxies = f.read().splitlines()
+		if not listofproxies:
+			print("No valid proxies available.")
+			exit()
+		q = Queue()
+		for proxy in listofproxies:
+			q.put(proxy)
+		return q
+
+	# Charge initialement les proxies
+	self.proxies_queue = load_proxies()
+
 	# Function to process each paragraph
 	def process_paragraph(i):
+		nonlocal doc_lock, file_lock  # Utilisation des locks dans la fonction imbriquée
 		para = parasin[i]
 		temp = para.text
 
@@ -85,27 +88,72 @@ def pre_translate_docx(self, projectid):
 			# Paragraph already translated
 			pass
 		else:
+			# Recharger les proxies si la queue est vide
+			if self.proxies_queue.empty():
+				print("Rechargement des proxies.")
+				self.proxies_queue = load_proxies()
+
 			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
 			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
-			index, translation, proxy = translate_paragraph(i, temp, proxies_queue, max_retries=float('inf'), prev_paragraph=prev_paragraph, next_paragraph=next_paragraph, formatedGlossary=formatedGlossary)
-			print("Traduction : " + translation)
+			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'), prev_paragraph=prev_paragraph, next_paragraph=next_paragraph, formatedGlossary=formatedGlossary)
 			if translation:
 				with doc_lock:
 					docout.paragraphs[i].text = translation
 				with file_lock:
 					docout.save(output_path)
 
-
 	# Use ThreadPoolExecutor to manage threads
 	with ThreadPoolExecutor(max_workers=15) as executor:
 		futures = [executor.submit(process_paragraph, i) for i in range(length)]
 		for i, future in enumerate(as_completed(futures)):
-			# Met à jour l’état de progression
 			self.update_state(state='PROGRESS', meta={'current': i + 1, 'total': length})
 			future.result()  # Récupère les exceptions éventuelles
 
 	# Retourne le statut final
 	return {'status': 'Task completed!', 'output_file': output_path}
+
+
+
+
+@celery.task(bind=True)
+def update_proxies(self):
+	print("Updating proxies task launched")
+	proxy_sources = [
+		"https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/HTTPS_RAW.txt",
+		"https://raw.githubusercontent.com/r00tee/Proxy-List/refs/heads/main/Https.txt",
+		"https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/https.txt"
+	]
+
+	# Récupérer les proxies depuis les sources
+	proxies = []
+	for url in proxy_sources:
+		try:
+			response = requests.get(url, timeout=10)
+			if response.status_code == 200:
+				proxies.extend(response.text.splitlines())
+		except requests.RequestException as e:
+			print(f"Erreur lors de la récupération de proxies depuis {url}: {e}")
+
+	valid_proxies = []
+	with ThreadPoolExecutor(max_workers=1000) as executor:
+		future_to_proxy = {executor.submit(test_proxy, proxy): proxy for proxy in proxies}
+
+		for future in as_completed(future_to_proxy):
+			proxy = future_to_proxy[future]
+			try:
+				is_valid = future.result()
+				if is_valid:
+					print(f"Proxy {proxy} est valide.")
+					valid_proxies.append(proxy)
+			except Exception as exc:
+				print(f"Erreur lors du test du proxy {proxy}: {exc}")
+
+	# Écrire les proxies valides dans le fichier
+	with open(PROXY_PATH, 'w') as file:
+		file.write("\n".join(valid_proxies))
+
+	return {'status': 'Task completed!'}
+
 
 
 @app.route('/favicon.ico')
