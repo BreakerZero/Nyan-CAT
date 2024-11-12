@@ -280,7 +280,6 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 def test_proxy(proxy):
 	try:
 		response = requests.get("https://google.com/", proxies={"https": f"http://{proxy}"}, timeout=5)
-		print(response)
 		return response.status_code in [200, 429]
 	except requests.RequestException:
 		return False

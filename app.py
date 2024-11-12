@@ -33,52 +33,49 @@ def pre_translate_docx(self, projectid):
 	if not files or len(files) < 2:
 		raise FileNotFoundError("Deux fichiers DOCX sont requis pour déterminer l'entrée et la sortie.")
 
-	# Trie les fichiers pour identifier l’entrée et la sortie
 	input_file = min(files, key=len)
 	output_file = max(files, key=len)
 
-	# Crée les chemins complets pour les fichiers d’entrée et de sortie
 	input_path = os.path.join(project_folder, input_file)
 	output_path = os.path.join(project_folder, output_file)
 
-	# Charge le document d’entrée
 	docin = docx.Document(input_path)
 	parasin = docin.paragraphs
 
-	# Charge ou crée le document de sortie
 	try:
 		docout = docx.Document(output_path)
 	except:
 		docout = docx.Document()
 
-	# Assure que le document de sortie a le même nombre de paragraphes que l’entrée
 	while len(docout.paragraphs) < len(parasin):
 		docout.add_paragraph('')
 
 	length = len(parasin)
 
-	# Locks pour la sécurité des threads
 	doc_lock = threading.Lock()
 	file_lock = threading.Lock()
 
-	# Fonction pour recharger les proxies et les mettre dans une queue
 	def load_proxies():
 		with open(PROXY_PATH, "r") as f:
 			listofproxies = f.read().splitlines()
-		if not listofproxies:
-			print("No valid proxies available.")
-			exit()
 		q = Queue()
 		for proxy in listofproxies:
 			q.put(proxy)
 		return q
 
-	# Charge initialement les proxies
 	self.proxies_queue = load_proxies()
+	last_modified = os.path.getmtime(PROXY_PATH)
 
-	# Function to process each paragraph
 	def process_paragraph(i):
-		nonlocal doc_lock, file_lock  # Utilisation des locks dans la fonction imbriquée
+		nonlocal doc_lock, file_lock, last_modified
+
+		if time.time() - last_modified >= 60:
+			current_modified = os.path.getmtime(PROXY_PATH)
+			if current_modified != last_modified:  # Si le fichier a été mis à jour
+				print("Rechargement des proxies en raison de la modification du fichier.")
+				self.proxies_queue = load_proxies()
+				last_modified = current_modified
+
 		para = parasin[i]
 		temp = para.text
 
@@ -88,11 +85,6 @@ def pre_translate_docx(self, projectid):
 			# Paragraph already translated
 			pass
 		else:
-			# Recharger les proxies si la queue est vide
-			if self.proxies_queue.empty():
-				print("Rechargement des proxies.")
-				self.proxies_queue = load_proxies()
-
 			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
 			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
 			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'), prev_paragraph=prev_paragraph, next_paragraph=next_paragraph, formatedGlossary=formatedGlossary)
@@ -102,7 +94,6 @@ def pre_translate_docx(self, projectid):
 				with file_lock:
 					docout.save(output_path)
 
-	# Use ThreadPoolExecutor to manage threads
 	with ThreadPoolExecutor(max_workers=15) as executor:
 		futures = [executor.submit(process_paragraph, i) for i in range(length)]
 		for i, future in enumerate(as_completed(futures)):
@@ -121,7 +112,9 @@ def update_proxies(self):
 	proxy_sources = [
 		"https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/HTTPS_RAW.txt",
 		"https://raw.githubusercontent.com/r00tee/Proxy-List/refs/heads/main/Https.txt",
-		"https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/https.txt"
+		"https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/https.txt",
+		"https://raw.githubusercontent.com/babyhagey74/free-proxies/refs/heads/main/proxies/https/https.txt",
+		"https://raw.githubusercontent.com/officialputuid/KangProxy/refs/heads/KangProxy/https/https.txt",
 	]
 
 	# Récupérer les proxies depuis les sources
@@ -148,7 +141,6 @@ def update_proxies(self):
 			except Exception as exc:
 				print(f"Erreur lors du test du proxy {proxy}: {exc}")
 
-	# Écrire les proxies valides dans le fichier
 	with open(PROXY_PATH, 'w') as file:
 		file.write("\n".join(valid_proxies))
 
@@ -160,7 +152,7 @@ def update_proxies(self):
 def favicon():
 	return send_from_directory('static', 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-@app.route('/', methods=["GET"])  # racine site
+@app.route('/', methods=["GET"])
 def index():
 	return render_template('index.html')
 
@@ -943,6 +935,7 @@ def download_file(project_id, file_type):
 	return send_file(file_path, as_attachment=True)
 
 
+update_proxies.delay()
 if __name__ == "__main__":
 	if os.getenv("FLASK_ENV") != "production":
 		app.run(host="127.0.0.1", port=5000, threaded=True, debug=True)
