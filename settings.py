@@ -69,7 +69,6 @@ celery.conf.update(
     },
     timezone='UTC'
 )
-redis_client = redis.StrictRedis(host='redis', port=6379, db=0)
 start_lock = threading.Lock()
 server_started = False
 login_manager = LoginManager()
@@ -77,6 +76,21 @@ login_manager.login_view = '/login'
 login_manager.init_app(app)
 ConvAPI = ConverterAPI()
 system = platform.system()
+
+def wait_for_redis():
+    client = redis.Redis(host='redis', port=6379)
+    for _ in range(30):  # Attendre jusqu'à 30 secondes
+        try:
+            if client.ping():
+                print("Redis est prêt.")
+                return
+        except ConnectionError:
+            print("Redis n'est pas prêt, réessayer...")
+        time.sleep(1)
+    raise Exception("Impossible de se connecter à Redis après 30 secondes.")
+
+
+wait_for_redis()
 
 from translatepylocal.translators.deepl import DeeplTranslate as PersonalDeepl
 from translatepylocal.translators.base import BaseTranslator
