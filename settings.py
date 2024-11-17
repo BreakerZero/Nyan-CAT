@@ -62,8 +62,8 @@ db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
 celery = Celery(app.name)
 celery.conf.update(
-    broker_url='redis://localhost:6379/0',
-    result_backend='redis://localhost:6379/0',
+    broker_url=f'redis://{redis_host}:{redis_port}/0',
+    result_backend=f'redis://{redis_host}:{redis_port}/0',
     beat_schedule={
         'update-proxies-every-day': {
             'task': 'app.update_proxies',
