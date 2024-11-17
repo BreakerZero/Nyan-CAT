@@ -83,14 +83,14 @@ def wait_for_redis():
         try:
             if redis_client.ping():
                 print("Redis est prêt.")
-                return
+                return redis_client
         except ConnectionError:
             print("Redis n'est pas prêt, réessayer...")
         time.sleep(1)
     raise Exception("Impossible de se connecter à Redis après 30 secondes.")
 
 
-wait_for_redis()
+redis_client = wait_for_redis()
 
 from translatepylocal.translators.deepl import DeeplTranslate as PersonalDeepl
 from translatepylocal.translators.base import BaseTranslator
