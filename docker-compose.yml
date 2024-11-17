@@ -11,6 +11,8 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=production
       - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject

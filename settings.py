@@ -38,6 +38,9 @@ from celery.result import AsyncResult
 from celery import shared_task
 from queue import Queue
 
+redis_host = os.getenv('REDIS_HOST', 'localhost')
+redis_port = os.getenv('REDIS_PORT', '6379')
+
 LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
 LANGUAGETOOL_BASE_DIR = "languagetool"
 LANGUAGETOOL_VERSION = "LanguageTool-6.5"
@@ -47,8 +50,8 @@ PROXY_PATH = os.path.join('proxies.txt')
 app = Flask("app")
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = f'redis://{redis_host}:{redis_port}/0'
+app.config['CELERY_RESULT_BACKEND'] = f'redis://{redis_host}:{redis_port}/0'
 file_path = os.path.join(os.getcwd(), 'database', 'nyan.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path  # Nom de la bdd
 app.config['SECRET_KEY'] = '9df31cd3eb2f6f6386571da69d6b418e'  # Clé random pour autentification
