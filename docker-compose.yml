@@ -52,3 +52,7 @@ services:
 volumes:
   nginx-logs:
   redis-data:
+
+networks:
+  default:
+    driver: bridge
