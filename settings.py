@@ -78,10 +78,10 @@ ConvAPI = ConverterAPI()
 system = platform.system()
 
 def wait_for_redis():
-    client = redis.Redis(host='redis', port=6379)
+    redis_client = redis.Redis(host='redis', port=6379)
     for _ in range(30):  # Attendre jusqu'à 30 secondes
         try:
-            if client.ping():
+            if redis_client.ping():
                 print("Redis est prêt.")
                 return
         except ConnectionError:
