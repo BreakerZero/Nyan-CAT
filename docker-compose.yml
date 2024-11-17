@@ -10,7 +10,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PATH=/app/venv/bin:$PATH
+      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
