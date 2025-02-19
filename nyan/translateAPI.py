@@ -83,7 +83,7 @@ class TranslatorAPI:
 				)
 				context = f'global context: {context_suppl}, previous sentences : {prev_paragraph}, next sentences : {next_paragraph}'
 
-				r = translator.translate_text(text=clean_text, source_lang=source, target_lang=target, glossary=g, formality=formality, context=context)
+				r = translator.translate_text(text=clean_text, source_lang=source, target_lang=target, glossary=g, formality=formality, context=context, model_type='prefer_quality_optimized')
 				return str(r)
 			else:
 				translator = PersonalDeepl(request=Request())

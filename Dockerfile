@@ -1,8 +1,9 @@
-FROM python:3.11.10-alpine3.20
+FROM python:3.12.9-alpine3.21
 
 LABEL maintainer="Breaker000"
 
 RUN apk update && apk add --no-cache \
+    coreutils \
     curl \
     unzip \
     python3 \
