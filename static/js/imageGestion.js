@@ -8,6 +8,7 @@ function loadCanvasWithImage(imgElement, canvasId) {
     var ctx = canvas.getContext("2d");
 
     var image = new Image();
+    image.crossOrigin = 'anonymous';
     image.onload = function() {
         canvas.width = image.width;
         canvas.height = image.height;

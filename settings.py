@@ -65,9 +65,9 @@ celery.conf.update(
     broker_url=f'redis://{redis_host}:{redis_port}/0',
     result_backend=f'redis://{redis_host}:{redis_port}/0',
     beat_schedule={
-        'update-proxies-every-day': {
+        'update-proxies-every-hour': {
             'task': 'app.update_proxies',
-            'schedule': crontab(minute='0', hour='0'),
+            'schedule': crontab(minute='0'),
         },
     },
     timezone='UTC'

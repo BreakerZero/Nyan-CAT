@@ -130,7 +130,10 @@ class ConverterAPI:
                 Docx.add_paragraph()
             if heading_tag:
                 heading_level = int(heading_tag.name[1])
-                Docx.paragraphs[ParaPosition + ParaInHtml].style = f"Heading {heading_level}"
+                try:
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style = f"Heading {heading_level}"
+                except KeyError:
+                    Docx.paragraphs[ParaPosition + ParaInHtml].style = f"Heading{heading_level}"
             if link_tag:
                 link_text = link_tag.get_text()
                 href = link_tag['href']
