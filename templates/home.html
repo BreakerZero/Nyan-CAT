@@ -85,8 +85,8 @@
 
     {% for project in Projectlist %}
       {% if project.Extension == "docx" %}
-        const projectId = {{ project.id }};
-        const statusUrl = document.getElementById(`task-status-url-${projectId}`).dataset.url;
+        var projectId = {{ project.id }};
+        var statusUrl = document.getElementById(`task-status-url-${projectId}`).dataset.url;
           
         updateTaskProgress(projectId, statusUrl);
           
