@@ -90,9 +90,9 @@ def pre_translate_docx(self, projectid):
 			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
 			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
 			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'),
-			                                                prev_paragraph=prev_paragraph,
-			                                                next_paragraph=next_paragraph,
-			                                                formatedGlossary=formatedGlossary)
+															prev_paragraph=prev_paragraph,
+															next_paragraph=next_paragraph,
+															formatedGlossary=formatedGlossary)
 			if translation:
 				with doc_lock:
 					docout.paragraphs[i].text = translation
@@ -119,6 +119,8 @@ def update_proxies(self):
 		"https://raw.githubusercontent.com/javadbazokar/PROXY-List/refs/heads/main/https.txt",
 		"https://raw.githubusercontent.com/officialputuid/KangProxy/refs/heads/KangProxy/https/https.txt",
 		"https://raw.githubusercontent.com/vmheaven/VMHeaven-Free-Proxy-Updated/refs/heads/main/https.txt",
+		"https://raw.githubusercontent.com/Anonym0usWork1221/Free-Proxies/refs/heads/main/proxy_files/https_proxies.txt",
+		"https://raw.githubusercontent.com/zebbern/Proxy-Scraper/refs/heads/main/https.txt",
 	]
 
 	# Récupérer les proxies depuis les sources
@@ -196,7 +198,7 @@ def get_prediction():
 	formality = request.json['formality']
 	text = request.json['text']
 	translation = TranslatorAPI.translate(translator, provider, apikey, source, target, formality, text,
-	                                      formatedGlossary)
+										  formatedGlossary)
 	return jsonify({"output": translation})
 
 
@@ -219,8 +221,8 @@ def glossary():
 			return redirect("/glossary")
 	else:
 		EditGlossary = Glossary.query.order_by(Glossary.id).with_entities(Glossary.id, Glossary.Source_Lang,
-		                                                                  Glossary.Target_Lang, Glossary.Source,
-		                                                                  Glossary.Target).all()
+																		  Glossary.Target_Lang, Glossary.Source,
+																		  Glossary.Target).all()
 		return render_template('glossary.html', EditGlossary=EditGlossary)
 
 
@@ -376,7 +378,7 @@ def signup():
 		hashpassword = generate_password_hash(password, method="scrypt")
 
 		new_user = User(Pseudo=pseudo, Mail=mail, Password=hashpassword, Status=0, TranslatorSettings="More",
-		                TranslatorProvider="Nyan-Cat", ApiKey="None", KeepStyle=0, Autocomplete=0)
+						TranslatorProvider="Nyan-Cat", ApiKey="None", KeepStyle=0, Autocomplete=0)
 		# add the new user to the database
 		db.session.add(new_user)
 		db.session.commit()
@@ -469,8 +471,8 @@ def newproject():
 		elif type == "Manga/BD (Image)":
 			type = "image"
 		new_project = Project(id=int(idproject), Name=name, Type=type, Owner=current_owner, Extension=format,
-		                      Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0,
-		                      Last_Previous_Block=0)
+							  Source_Lang=source, Target_Lang=target, Advancement=0, Last_Block=0,
+							  Last_Previous_Block=0)
 		db.session.add(new_project)
 		db.session.commit()
 		return redirect('/home')
@@ -492,9 +494,9 @@ def projecttextdocx(id):
 		 total_sections) = get_project_data_for_get_method(id)
 		if extension == "docx":
 			return render_template('docxproject.html', id=id, last=last, keepstyle=keepstyle, complete=complete,
-			                       user=flask_login.current_user, project=project,
-			                       translatorsettings=translatorsettings, extension=extension, type=type,
-			                       total_sections=total_sections)
+								   user=flask_login.current_user, project=project,
+								   translatorsettings=translatorsettings, extension=extension, type=type,
+								   total_sections=total_sections)
 		else:
 			return render_template('404.html'), 404
 	if request.method == "POST":
@@ -536,7 +538,7 @@ def projecttextdocx(id):
 				if paragraph_exists and current_text.strip() != text.strip() and not current_text == '':
 					if idpreviousblock is not None:
 						ConverterAPI.ParaHtmlToDocx(ConvAPI, TranslatedHtml, TranslatedDocx, int(idpreviousblock),
-						                            SaveName)
+													SaveName)
 					Html = ConverterAPI.ParaDocxToHtml(ConvAPI, TranslatedDocx, idblock)
 				else:
 					text = html2text.html2text(OriginalHtml)
@@ -627,17 +629,17 @@ def addsegment():
 		Target_Lang = request.json['Target_Lang']
 		csv_path = os.path.join("static", "csv", f"memory{Project_ID}.csv")
 		existing_segment = TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID,
-		                                                     Segment=Segment_ID).first()
+															 Segment=Segment_ID).first()
 		if existing_segment is None:
 			New_TranslationMemory = TranslationMemory(Owner=User_ID, Project=Project_ID, Segment=Segment_ID,
-			                                          Source=Source, Target=Target, Source_Lang=Source_Lang,
-			                                          Target_Lang=Target_Lang)
+													  Source=Source, Target=Target, Source_Lang=Source_Lang,
+													  Target_Lang=Target_Lang)
 			db.session.add(New_TranslationMemory)
 			db.session.commit()
 			if os.path.isfile(csv_path):
 				with open(csv_path, "a+") as csvfile:
 					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-					                    lineterminator='\n')
+										lineterminator='\n')
 					writer.writerow([Source.replace('\n', ''), Target.replace('\n', '')])
 		else:
 			TranslationMemory.query.filter_by(Owner=User_ID, Project=Project_ID, Segment=Segment_ID).update(
@@ -646,7 +648,7 @@ def addsegment():
 			if os.path.isfile(csv_path):
 				with open(csv_path, "a+") as csvfile:
 					writer = csv.writer(csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL,
-					                    lineterminator='\n')
+										lineterminator='\n')
 					writer.writerow([Source.replace('\n', ''), Target.replace('\n', '')])
 
 		return jsonify({"result": "ok"})
@@ -829,7 +831,7 @@ def vocab():
 		description = request.form.get('description')
 
 		new_vocab = Vocab(Lang=lang, Word=word, Grammatical_Category=grammatical_category, Gender=gender, Plural=plural,
-		                  Description=description)
+						  Description=description)
 		try:
 			db.session.add(new_vocab)
 			db.session.commit()
@@ -895,15 +897,20 @@ def pretranslate(project_id):
 	last_task_id = redis_client.lindex(f"project:{project_id}:tasks", -1)
 
 	if last_task_id:
-		last_task = celery.AsyncResult(last_task_id.decode('utf-8'))
+		last_task_id = last_task_id.decode('utf-8')
+		last_task = celery.AsyncResult(last_task_id)
 		if last_task.state in ['PENDING', 'STARTED', 'PROGRESS']:
-			return jsonify({"error": "Une tâche de prétraduction est déjà en cours pour ce projet."}), 400
+			celery.control.revoke(last_task_id, terminate=True)
+			redis_client.hset(
+				f"project:{project_id}:task_status",
+				last_task_id,
+				"revoked"
+			)
 
-	task = pre_translate_docx.delay(project_id)
+	new_task = pre_translate_docx.delay(project_id)
+	redis_client.rpush(f"project:{project_id}:tasks", new_task.id)
 
-	redis_client.rpush(f"project:{project_id}:tasks", task.id)
-
-	return jsonify({'task_id': task.id}), 202
+	return jsonify({'task_id': new_task.id}), 202
 
 
 @app.route('/getprojecttaskstatus/<int:project_id>', methods=['GET'])
