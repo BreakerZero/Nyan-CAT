@@ -37,6 +37,7 @@ import redis
 from celery.result import AsyncResult
 from celery import shared_task
 from queue import Queue
+from celery.utils.log import get_task_logger
 
 redis_host = os.getenv('REDIS_HOST', 'localhost')
 redis_port = os.getenv('REDIS_PORT', '6379')
@@ -62,15 +63,15 @@ db = flask_sqlalchemy.SQLAlchemy(app)  # lien bdd
 app.config["DEBUG"] = True  # option debug
 celery = Celery(app.name)
 celery.conf.update(
-    broker_url=f'redis://{redis_host}:{redis_port}/0',
-    result_backend=f'redis://{redis_host}:{redis_port}/0',
-    beat_schedule={
-        'update-proxies-every-hour': {
-            'task': 'app.update_proxies',
-            'schedule': crontab(minute='0'),
-        },
-    },
-    timezone='UTC'
+	broker_url=f'redis://{redis_host}:{redis_port}/0',
+	result_backend=f'redis://{redis_host}:{redis_port}/0',
+	beat_schedule={
+		'update-proxies-every-hour': {
+			'task': 'app.update_proxies',
+			'schedule': crontab(minute='0'),
+		},
+	},
+	timezone='UTC'
 )
 start_lock = threading.Lock()
 server_started = False
@@ -79,18 +80,20 @@ login_manager.login_view = '/login'
 login_manager.init_app(app)
 ConvAPI = ConverterAPI()
 system = platform.system()
+logger = get_task_logger(__name__)
+
 
 def wait_for_redis():
-    redis_client = redis.Redis(host=redis_host, port=6379)
-    for _ in range(30):  # Attendre jusqu'à 30 secondes
-        try:
-            if redis_client.ping():
-                print("Redis est prêt.")
-                return redis_client
-        except ConnectionError:
-            print("Redis n'est pas prêt, réessayer...")
-        time.sleep(1)
-    raise Exception("Impossible de se connecter à Redis après 30 secondes.")
+	redis_client = redis.Redis(host=redis_host, port=6379)
+	for _ in range(30):  # Attendre jusqu'à 30 secondes
+		try:
+			if redis_client.ping():
+				print("Redis est prêt.")
+				return redis_client
+		except ConnectionError:
+			print("Redis n'est pas prêt, réessayer...")
+		time.sleep(1)
+	raise Exception("Impossible de se connecter à Redis après 30 secondes.")
 
 
 redis_client = wait_for_redis()

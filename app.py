@@ -87,6 +87,7 @@ def pre_translate_docx(self, projectid):
 			# Paragraph already translated
 			pass
 		else:
+			logger.info(f"Traduction du paragraphe {i} en cours...")
 			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
 			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
 			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'),
@@ -98,12 +99,16 @@ def pre_translate_docx(self, projectid):
 					docout.paragraphs[i].text = translation
 				with file_lock:
 					docout.save(output_path)
+				logger.info(f"Paragraphe {i} traduit avec succès (proxy utilisé: {proxy})")
 
 	with ThreadPoolExecutor(max_workers=15) as executor:
 		futures = [executor.submit(process_paragraph, i) for i in range(length)]
 		for i, future in enumerate(as_completed(futures)):
 			self.update_state(state='PROGRESS', meta={'current': i + 1, 'total': length})
-			future.result()  # Récupère les exceptions éventuelles
+			try:
+				future.result()
+			except Exception as e:
+				logger.info(f"Erreur pendant le traitement du paragraphe {i}: {e}", exc_info=True)
 
 	# Retourne le statut final
 	return {'status': 'Task completed!', 'output_file': output_path}
@@ -901,12 +906,11 @@ def pretranslate(project_id):
 		last_task_id = last_task_id.decode('utf-8')
 		last_task = celery.AsyncResult(last_task_id)
 		if last_task.state in ['PENDING', 'STARTED', 'PROGRESS']:
-			celery.control.revoke(last_task_id, terminate=True)
-			redis_client.hset(
-				f"project:{project_id}:task_status",
-				last_task_id,
-				"revoked"
-			)
+			redis_client.delete(f"project:{project_id}:tasks")
+			redis_client.delete(f"project:{project_id}:task_status")
+			celery.control.revoke(last_task_id, terminate=True, signal='SIGKILL')
+			restart_celery_workers()
+			time.sleep(0.5)
 
 	new_task = pre_translate_docx.delay(project_id)
 	redis_client.rpush(f"project:{project_id}:tasks", new_task.id)
