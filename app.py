@@ -26,6 +26,7 @@ with app.app_context():
 
 
 @celery.task(queue='pretranslate')
+@celery.task(bind=True)
 def pre_translate_docx(self, projectid):
 	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(projectid))
 
@@ -113,6 +114,7 @@ def pre_translate_docx(self, projectid):
 
 
 @celery.task(queue='proxyupdate')
+@celery.task(bind=True)
 def update_proxies(self):
 	print("Updating proxies task launched")
 	proxy_sources = [
