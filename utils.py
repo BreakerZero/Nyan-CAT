@@ -182,51 +182,6 @@ def update_added_txt_and_restart_lt(kill=True):
 			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
 	except Exception: pass
 
-
-def start_celery_worker():
-	system = platform.system()
-
-	# Vérifie si un worker Celery est déjà en cours d'exécution
-	for process in psutil.process_iter(['name', 'cmdline']):
-		# Vérifie si le processus est un worker Celery avec les arguments spécifiques
-		if "celery" in process.info['name'] and "-A app.celery worker" in ' '.join(process.info['cmdline']):
-			print("Un worker Celery est déjà en cours d'exécution.")
-			return  # Termine la fonction si un worker existe déjà
-
-	# Si aucun worker actif n'est trouvé, démarre un nouveau worker Celery
-	if system in ["Linux", "Darwin"]:
-		# Linux ou macOS
-		command = ["celery", "-A", "app.celery", "worker", "--loglevel=info", "--concurrency=2", "--prefetch-multiplier=1"]
-		Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	elif system == "Windows":
-		# Windows
-		command = ["celery", "-A", "app.celery", "worker", "--loglevel=info", "--pool=solo", "--prefetch-multiplier=1"]
-		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-def start_celery_beat():
-	system = platform.system()
-
-	for process in psutil.process_iter(['name', 'cmdline']):
-		if "celery" in process.info['name'] and "-A app.celery beat" in ' '.join(process.info['cmdline']):
-			print("Une instance de celery beat est déjà en cours d'exécution.")
-			return  # Termine la fonction si celery beat est déjà en cours
-
-	if system in ["Linux", "Darwin"]:
-		command = ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
-		Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	elif system == "Windows":
-		command = ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
-		Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-def restart_celery_workers():
-	for process in psutil.process_iter(['name', 'cmdline']):
-		if "celery" in process.info['name'] and "-A app.celery worker" in ' '.join(process.info['cmdline']):
-			process.terminate()
-			process.wait()
-
-	start_celery_worker()
-
-
 def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary = ""):
 	translation = None
 	numberoftries = 0

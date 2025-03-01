@@ -15,8 +15,6 @@ def load_user(user_id):
 
 with app.app_context():
 	formatedGlossary = Glos()
-	start_celery_worker()
-	start_celery_beat()
 	global server_started
 	if not server_started:
 		with start_lock:
@@ -27,7 +25,7 @@ with app.app_context():
 			server_started = True
 
 
-@celery.task(bind=True)
+@celery.task(queue='pretranslate')
 def pre_translate_docx(self, projectid):
 	project_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(projectid))
 
@@ -114,7 +112,7 @@ def pre_translate_docx(self, projectid):
 	return {'status': 'Task completed!', 'output_file': output_path}
 
 
-@celery.task(bind=True)
+@celery.task(queue='proxyupdate')
 def update_proxies(self):
 	print("Updating proxies task launched")
 	proxy_sources = [
@@ -909,7 +907,6 @@ def pretranslate(project_id):
 			redis_client.delete(f"project:{project_id}:tasks")
 			redis_client.delete(f"project:{project_id}:task_status")
 			celery.control.revoke(last_task_id, terminate=True, signal='SIGKILL')
-			restart_celery_workers()
 			time.sleep(0.5)
 
 	new_task = pre_translate_docx.delay(project_id)

@@ -3,7 +3,7 @@ services:
   nyancat:
     build: .
     image: nyan-cat:latest
-    shm_size: '256m'
+    shm_size: '512m'
     ports:
       - "7777:5000"
     environment:
@@ -17,9 +17,86 @@ services:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
+      - ./proxies.txt:/app/proxies.txt
     tty: true
     depends_on:
       - redis
+
+  celery-worker-pretranslate:
+    build: .
+    image: nyan-cat:latest
+    container_name: "celery-worker-pretranslate"
+    depends_on:
+      - nyancat
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_QUEUE=pretranslate
+    command: >
+      celery -A app.celery worker
+      --loglevel=info
+      --concurrency=2
+      --prefetch-multiplier=1
+      -Q pretranslate
+    volumes:
+      - /usr/builtin/etc/certificate:/app/ssl
+      - /share/Docker/NyanCAT/fileproject:/app/fileproject
+      - /share/Docker/NyanCAT/database:/app/database
+      - ./proxies.txt:/app/proxies.txt
+
+  celery-worker-proxy:
+    build: .
+    image: nyan-cat:latest
+    container_name: "celery-worker-proxy"
+    depends_on:
+      - nyancat
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CELERY_QUEUE=proxyupdate
+    command: >
+      celery -A app.celery worker
+      --loglevel=info
+      --concurrency=1
+      --prefetch-multiplier=1
+      -Q proxyupdate
+    volumes:
+      - /usr/builtin/etc/certificate:/app/ssl
+      - /share/Docker/NyanCAT/fileproject:/app/fileproject
+      - /share/Docker/NyanCAT/database:/app/database
+      - ./proxies.txt:/app/proxies.txt
+
+  celery-beat:
+    build: .
+    image: nyan-cat:latest
+    container_name: "celery-beat"
+    depends_on:
+      - redis
+    environment:
+      - PYTHONPATH=/app
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: >
+      celery -A app.celery beat
+      --loglevel=info
+    volumes:
+      - /usr/builtin/etc/certificate:/app/ssl
+      - /share/Docker/NyanCAT/fileproject:/app/fileproject
+      - /share/Docker/NyanCAT/database:/app/database
+      - ./proxies.txt:/app/proxies.txt
 
   nginx:
     image: nginx:latest
@@ -33,16 +110,6 @@ services:
     depends_on:
       - nyancat
 
-  fail2ban:
-    image: crazymax/fail2ban:latest
-    volumes:
-      - nginx-logs:/var/log/nginx
-      - /volume1/Web/fail2ban:/etc/fail2ban/
-    cap_add:
-      - NET_ADMIN
-    depends_on:
-      - nginx
-
   redis:
     image: redis:7-alpine
     container_name: redis-stack-server
@@ -54,7 +121,3 @@ services:
 volumes:
   nginx-logs:
   redis-data:
-
-networks:
-  default:
-    driver: bridge
