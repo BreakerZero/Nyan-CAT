@@ -17,7 +17,7 @@ services:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
-      - ./proxies.txt:/app/proxies.txt
+      - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
     tty: true
     depends_on:
       - redis
@@ -47,7 +47,7 @@ services:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
-      - ./proxies.txt:/app/proxies.txt
+      - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
 
   celery-worker-proxy:
     build: .
@@ -74,7 +74,7 @@ services:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
-      - ./proxies.txt:/app/proxies.txt
+      - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
 
   celery-beat:
     build: .
@@ -96,7 +96,7 @@ services:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
-      - ./proxies.txt:/app/proxies.txt
+      - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
 
   nginx:
     image: nginx:latest
