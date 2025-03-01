@@ -73,7 +73,7 @@ def pre_translate_docx(self, projectid):
 		if time.time() - last_modified >= 60:
 			current_modified = os.path.getmtime(PROXY_PATH)
 			if current_modified != last_modified:  # Si le fichier a été mis à jour
-				print("Rechargement des proxies en raison de la modification du fichier.")
+				logger.info("Rechargement des proxies en raison de la modification du fichier.")
 				self.proxies_queue = load_proxies()
 				last_modified = current_modified
 
@@ -116,7 +116,7 @@ def pre_translate_docx(self, projectid):
 @celery.task(queue='proxyupdate')
 @celery.task(bind=True)
 def update_proxies(self):
-	print("Updating proxies task launched")
+	logger.info("Updating proxies task launched")
 	proxy_sources = [
 		"https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/HTTPS_RAW.txt",
 		"https://raw.githubusercontent.com/vakhov/fresh-proxy-list/refs/heads/master/https.txt",
@@ -136,7 +136,7 @@ def update_proxies(self):
 			if response.status_code == 200:
 				proxies.extend(response.text.splitlines())
 		except requests.RequestException as e:
-			print(f"Erreur lors de la récupération de proxies depuis {url}: {e}")
+			logger.info(f"Erreur lors de la récupération de proxies depuis {url}: {e}")
 
 	valid_proxies = []
 	with ThreadPoolExecutor(max_workers=1000) as executor:
