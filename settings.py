@@ -68,7 +68,7 @@ celery.conf.update(
 	beat_schedule={
 		'update-proxies-every-hour': {
 			'task': 'app.update_proxies',
-			'schedule': crontab(minute='0'),
+			'schedule': crontab(minute='10'),
 			'options': {
 				'queue': 'proxyupdate'
 			},
