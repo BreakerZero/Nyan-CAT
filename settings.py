@@ -69,6 +69,9 @@ celery.conf.update(
 		'update-proxies-every-hour': {
 			'task': 'app.update_proxies',
 			'schedule': crontab(minute='0'),
+			'options': {
+				'queue': 'proxyupdate'
+			},
 		},
 	},
 	timezone='UTC'
