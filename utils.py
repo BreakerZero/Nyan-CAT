@@ -209,23 +209,14 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 		glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
 		glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
 		try:
-			translation = translator.translate(
-				text=para_text,
-				destination_language="fr",
-				source_language="en",
-				formality='informal',
-				glossary=glossary,
-				prev_paragraph=prev_paragraph,
-				next_paragraph=next_paragraph
-			).result
-		except Exception as e:
-			logger.info(f'Error for paragraph {index}: {str(e)}')
 			(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
 				project_id)
 			translation = TranslatorAPI.translate(
 				translator, provider, settings, apikey, source, target, formality, para_text,
 				formatedGlossary, prev_paragraph, next_paragraph, Context
 			).replace("\n", "")
+		except Exception as e:
+			logger.info(e)
 		finally:
 			proxies_queue.put(proxy)
 
