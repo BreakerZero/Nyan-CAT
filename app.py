@@ -92,7 +92,7 @@ def pre_translate_docx(self, projectid):
 			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'),
 			                                                prev_paragraph=prev_paragraph,
 			                                                next_paragraph=next_paragraph,
-			                                                formatedGlossary=formatedGlossary)
+			                                                formatedGlossary=formatedGlossary, project_id = projectid)
 			if translation:
 				with doc_lock:
 					docout.paragraphs[i].text = translation

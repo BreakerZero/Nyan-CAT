@@ -1,5 +1,6 @@
 from models import *
 
+
 def apply_clone_with_blending(image, clone, clone_pt, target_pt, radius):
 	mask = np.zeros((radius * 2, radius * 2), dtype=np.uint8)
 	cv2.circle(mask, (radius, radius), radius, 255, -1)
@@ -17,6 +18,7 @@ def apply_clone_with_blending(image, clone, clone_pt, target_pt, radius):
 						0 <= tgt_x < clone.shape[1] and 0 <= tgt_y < clone.shape[0]):
 					alpha = mask[y + radius, x + radius] / 255.0
 					clone[tgt_y, tgt_x] = (1.0 - alpha) * image[tgt_y, tgt_x] + alpha * image[src_y, src_x]
+
 
 def docx_get_ressource_in_request(request, id, namefile):
 	idblock = int(request.json["ressource"])
@@ -120,12 +122,11 @@ def get_context_paragraphs(i, parasin, direction="before"):
 	return " ".join(context)
 
 
-
-
 def Glos():  # fonction formatage glossaire
 	formatedGlo = ""
 	i = 0
-	Gloquery = Glossary.query.order_by(Glossary.Source, Glossary.Target).with_entities(Glossary.Source, Glossary.Target).all()
+	Gloquery = Glossary.query.order_by(Glossary.Source, Glossary.Target).with_entities(Glossary.Source,
+	                                                                                   Glossary.Target).all()
 	if Gloquery is None:
 		return formatedGlo
 	else:
@@ -175,14 +176,20 @@ def update_added_txt_and_restart_lt(kill=True):
 		if system == "Linux" or system == "Darwin":
 			if kill:
 				run(["pkill", "-f", "languagetool-server"])
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"),
+			       "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
 		elif system == "Windows":
 			if kill:
 				run(["taskkill", "/F", "/IM", "java.exe"], check=True)
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"), "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"], creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
-	except Exception: pass
+			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"),
+			       "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"],
+			      creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
+	except Exception:
+		pass
 
-def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary = ""):
+
+def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "",
+                        next_paragraph: str = "", formatedGlossary="", project_id=1):
 	translation = None
 	numberoftries = 0
 	proxy = None
@@ -211,12 +218,15 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 				prev_paragraph=prev_paragraph,
 				next_paragraph=next_paragraph
 			).result
-		except requests.exceptions.Timeout:
-			logger.info(f"Request timed out for paragraph {index}.")
 		except Exception as e:
 			logger.info(f'Error for paragraph {index}: {str(e)}')
+			(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
+				project_id)
+			translation = TranslatorAPI.translate(
+				translator, provider, settings, apikey, source, target, formality, para_text,
+				formatedGlossary, prev_paragraph, next_paragraph, Context
+			).replace("\n", "")
 		finally:
-			# Put the proxy back into the queue
 			proxies_queue.put(proxy)
 
 	if translation is None:
@@ -224,6 +234,7 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 	if translation == '':
 		return index, para_text, proxy
 	return index, translation, proxy
+
 
 def test_proxy(proxy):
 	try:

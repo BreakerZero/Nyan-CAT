@@ -34,6 +34,7 @@ from Levenshtein import distance
 from celery import Celery
 from celery.schedules import crontab
 import redis
+import deepl
 from celery.result import AsyncResult
 from celery import shared_task
 from queue import Queue
@@ -68,7 +69,7 @@ celery.conf.update(
 	beat_schedule={
 		'update-proxies-every-hour': {
 			'task': 'app.update_proxies',
-			'schedule': crontab(minute='15'),
+			'schedule': crontab(minute='0'),
 			'options': {
 				'queue': 'proxyupdate'
 			},
