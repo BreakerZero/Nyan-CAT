@@ -233,6 +233,7 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 		print(f"Failed to translate paragraph {index} after {max_retries} attempts.")
 	if translation == '':
 		return index, para_text, proxy
+	print(f"Paragraph {index} translated successfully.")
 	return index, translation, proxy
 
 
