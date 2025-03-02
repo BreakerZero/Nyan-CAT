@@ -87,7 +87,7 @@ def get_project_data_for_get_method(project_id):
 
 def get_project_data_for_post_method(project_id):
 	project = Project.query.filter_by(id=project_id).first()
-	user = User.query.filter_by(id=flask_login.current_user.id).first()
+	user = User.query.filter_by(id=project.Owner).first()
 	return (
 		project.Type,
 		project.Extension,
@@ -205,8 +205,6 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 				print(f"No proxies available for paragraph {index}")
 				break
 
-			glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
-			glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
 			try:
 				(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
 					project_id)
