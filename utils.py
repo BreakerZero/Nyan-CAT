@@ -205,7 +205,6 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 			print(f"No proxies available for paragraph {index}")
 			break
 
-		translator = PersonalDeepl(request=Request(proxy))
 		glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
 		glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
 		try:
