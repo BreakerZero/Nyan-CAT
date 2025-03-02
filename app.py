@@ -89,10 +89,7 @@ def pre_translate_docx(self, projectid):
 			logger.info(f"Traduction du paragraphe {i} en cours...")
 			prev_paragraph = get_context_paragraphs(i, parasin, direction="before")
 			next_paragraph = get_context_paragraphs(i, parasin, direction="after")
-			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'),
-			                                                prev_paragraph=prev_paragraph,
-			                                                next_paragraph=next_paragraph,
-			                                                formatedGlossary=formatedGlossary, project_id = projectid)
+			index, translation, proxy = translate_paragraph(i, temp, self.proxies_queue, max_retries=float('inf'), prev_paragraph=prev_paragraph, next_paragraph=next_paragraph,  formatedGlossary=formatedGlossary, project_id = projectid)
 			if translation:
 				with doc_lock:
 					docout.paragraphs[i].text = translation
