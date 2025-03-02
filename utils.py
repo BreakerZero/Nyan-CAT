@@ -188,43 +188,43 @@ def update_added_txt_and_restart_lt(kill=True):
 		pass
 
 
-def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "",
-                        next_paragraph: str = "", formatedGlossary="", project_id=1):
-	translation = None
-	numberoftries = 0
-	proxy = None
+def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary="", project_id=1):
+	with app.app_context():
+		translation = None
+		numberoftries = 0
+		proxy = None
 
-	while translation is None and numberoftries < max_retries:
-		numberoftries += 1
-		time.sleep(0.5)
+		while translation is None and numberoftries < max_retries:
+			numberoftries += 1
+			time.sleep(0.5)
 
-		# Get a proxy from the queue
-		try:
-			proxy = proxies_queue.get_nowait()
-		except:
-			print(f"No proxies available for paragraph {index}")
-			break
+			# Get a proxy from the queue
+			try:
+				proxy = proxies_queue.get_nowait()
+			except:
+				print(f"No proxies available for paragraph {index}")
+				break
 
-		glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
-		glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
-		try:
-			(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
-				project_id)
-			translation = TranslatorAPI.translate(
-				translator, provider, settings, apikey, source, target, formality, para_text,
-				formatedGlossary, prev_paragraph, next_paragraph, Context
-			).replace("\n", "")
-		except Exception as e:
-			logger.info(e)
-		finally:
-			proxies_queue.put(proxy)
+			glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=['EN', 'FR'])
+			glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language='en', target_language='fr')
+			try:
+				(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
+					project_id)
+				translation = TranslatorAPI.translate(
+					translator, provider, settings, apikey, source, target, formality, para_text,
+					formatedGlossary, prev_paragraph, next_paragraph, Context
+				).replace("\n", "")
+			except Exception as e:
+				logger.info(e)
+			finally:
+				proxies_queue.put(proxy)
 
-	if translation is None:
-		print(f"Failed to translate paragraph {index} after {max_retries} attempts.")
-	if translation == '':
-		return index, para_text, proxy
-	print(f"Paragraph {index} translated successfully.")
-	return index, translation, proxy
+		if translation is None:
+			print(f"Failed to translate paragraph {index} after {max_retries} attempts.")
+		if translation == '':
+			return index, para_text, proxy
+		print(f"Paragraph {index} translated successfully.")
+		return index, translation, proxy
 
 
 def test_proxy(proxy):
