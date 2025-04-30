@@ -196,7 +196,7 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 
 		while translation is None and numberoftries < max_retries:
 			numberoftries += 1
-			time.sleep(0.5)
+			time.sleep(2.5)
 
 			# Get a proxy from the queue
 			try:
