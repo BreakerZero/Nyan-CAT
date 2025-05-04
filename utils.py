@@ -194,34 +194,35 @@ def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'
 		numberoftries = 0
 		proxy = None
 
-		while translation is None and numberoftries < max_retries:
-			numberoftries += 1
-			time.sleep(2.5)
+		(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(project_id)
 
-			# Get a proxy from the queue
-			try:
-				proxy = proxies_queue.get_nowait()
-			except:
-				print(f"No proxies available for paragraph {index}")
-				break
+		if apikey == '':
+			while translation is None and numberoftries < max_retries:
+				numberoftries += 1
+				time.sleep(2.5)
 
-			try:
-				(type, extension, source, target, provider, settings, formality, apikey) = get_project_data_for_post_method(
-					project_id)
-				translation = TranslatorAPI.translate(
-					translator, provider, settings, apikey, source, target, formality, para_text,
-					formatedGlossary, prev_paragraph, next_paragraph, Context
-				).replace("\n", "")
-			except Exception as e:
-				logger.info(e)
-			finally:
-				proxies_queue.put(proxy)
+				proxy = None
+				while proxy is None:
+					try:
+						proxy = proxies_queue.get_nowait()
+					except:
+						print(f"No proxies available for paragraph {index}, waiting...")
+						time.sleep(5)
+
+				try:
+					translation = TranslatorAPI.translate(translator, provider, settings, '', source, target, formality, para_text, formatedGlossary, prev_paragraph, next_paragraph, Context, proxy).replace("\n", "")
+				except Exception as e:
+					logger.info(f"Translation failed for paragraph {index}: {str(e)}")
+				finally:
+					proxies_queue.put(proxy)
+		else:
+			translation = TranslatorAPI.translate(translator, provider, settings, apikey, source, target, formality, para_text, formatedGlossary, prev_paragraph, next_paragraph, Context).replace("\n", "")
 
 		if translation is None:
-			print(f"Failed to translate paragraph {index} after {max_retries} attempts.")
+			logger.info(f"Failed to translate paragraph {index} after {numberoftries} attempts.")
 		if translation == '':
 			return index, para_text, proxy
-		print(f"Paragraph {index} translated successfully.")
+		logger.info(f"Paragraph {index} translated successfully.")
 		return index, translation, proxy
 
 

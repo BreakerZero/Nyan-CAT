@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from io import StringIO
 
 # from transformers import MarianTokenizer, MarianMTModel
@@ -31,7 +32,7 @@ class TranslatorAPI:
 		self.models[route] = (model, tok)
 		return 1, f"Successfully loaded model for {route} transation"""""
 
-	def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGlossary="", prev_paragraph: str = "", next_paragraph: str = "", Context=""):
+	def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGlossary="", prev_paragraph: str = "", next_paragraph: str = "", Context="", proxy=None):
 		if provider == "Nyan-CAT":  # fournisseur interne
 			"""route = f'{source}-{target}'
 			if not self.models.get(route):
@@ -45,8 +46,8 @@ class TranslatorAPI:
 		if provider == "DeepL":
 			context_suppl = ', '.join([context.Text for context in Context.query.filter_by(Active=True).with_entities(Context.Text).all()])
 			clean_text = re.sub(r'!\[\]\(data:image\/[a-zA-Z]+;base64,[^\)]+\)', '', text)
-			if apikey != "":
-
+			if apikey != '':
+				time.sleep(3)
 				if str(formality) == "informal":
 					formality = "less"
 				elif str(formality) == "formal":
@@ -54,7 +55,7 @@ class TranslatorAPI:
 				elif str(formality) is None:
 					formality = "default"
 
-				translator = deepl.Translator(apikey)
+				translator = deepl.DeepLClient(apikey, verify_ssl=False, send_platform_info=False)
 
 				gloassary_clean_text = re.sub(r'[^\w\s]', '', clean_text).lower()
 
@@ -86,7 +87,10 @@ class TranslatorAPI:
 				r = translator.translate_text(text=clean_text, source_lang=source, target_lang=target, glossary=g, formality=formality, context=context, model_type='prefer_quality_optimized')
 				return str(r)
 			else:
-				translator = PersonalDeepl(request=Request())
+				if proxy:
+					translator = PersonalDeepl(request=Request([proxy]))
+				else:
+					translator = PersonalDeepl(request=Request())
 				glossary_df = pd.read_csv(StringIO(formatedGlossary), sep="\t", header=None, names=[source.upper(), target.upper()])
 				glossary = BaseTranslator.FormatedGlossary(dataframe=glossary_df, source_language=source, target_language=target)
 				return translator.translate(clean_text, target, source, formality, glossary, prev_paragraph, next_paragraph).result

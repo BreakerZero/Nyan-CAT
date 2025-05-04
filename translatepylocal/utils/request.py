@@ -5,10 +5,12 @@ from typing import List, Union
 
 import pyuseragents
 import requests
+import urllib3
 from requests.models import CaseInsensitiveDict
 from translatepylocal.exceptions import RequestStatusError
 from translatepylocal.utils.lru_cacher import LRUDictCache
 
+urllib3.disable_warnings(category=urllib3.exceptions.InsecureRequestWarning)
 
 class Response():
     def __init__(self, request_obj: requests.Response) -> None:
@@ -81,7 +83,7 @@ class Response():
 
 
 class Request():
-    def __init__(self, proxy_urls: Union[str, List] = None, cache_duration: Union[int, float] = 2):
+    def __init__(self, proxy_urls: Union[str, List] = None, cache_duration: Union[int, float] = 2, timeout: int = 10):
         """
         translatepylocal's version of `requests.Session`
 
@@ -102,10 +104,12 @@ class Request():
         HEADERS = {
             "User-Agent": pyuseragents.random(),
             "Accept": "*/*",
-            "Accept-Language": "en-US,en-GB; q=0.5",
-            "Accept-Encoding": "gzip, deflate",
+            "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
             # "Content-Type": "application/x-www-form-urlencoded; application/json; charset=UTF-8",
-            "Connection": "keep-alive"
+            "Connection": "keep-alive",
+            "Origin": "https://www.deepl.com",
+            "Referer": "https://www.deepl.com/",
         }
 # default headers
 #        HEADERS = {
@@ -120,6 +124,8 @@ class Request():
         self.cache_duration = float(cache_duration)
 
         self.headers = HEADERS
+
+        self.timeout = timeout
 
         self._proxies_index = 0
         self.proxies = ([proxy_urls] if isinstance(proxy_urls, str) else list(proxy_urls) if proxy_urls is not None else [])
@@ -150,8 +156,9 @@ class Request():
             Response:
                 The response for the request
         """
+        kwargs.setdefault("timeout", self.timeout)
         self._set_session_proxies(self.proxies[self._proxies_index])
-        request = self.session.post(url, **kwargs)
+        request = self.session.post(url, verify=False, **kwargs)
         result = Response(request)
         request.close()
         if self._proxies_index != len(self.proxies) - 1:
@@ -179,8 +186,9 @@ class Request():
         _cache_key = str(url) + str(kwargs)
         if _cache_key in self.GETCACHE and time() - self.GETCACHE[_cache_key]["timestamp"] < self.cache_duration:
             return self.GETCACHE[_cache_key]["response"]
+        kwargs.setdefault("timeout", self.timeout)
         self._set_session_proxies(self.proxies[self._proxies_index])
-        request = self.session.get(url, **kwargs)
+        request = self.session.get(url, verify=False ,**kwargs)
         result = Response(request)
         request.close()
         if self._proxies_index != len(self.proxies) - 1:

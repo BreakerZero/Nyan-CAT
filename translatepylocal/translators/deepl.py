@@ -31,7 +31,8 @@ class DeeplTranslateException(BaseTranslateException):
     """
 
     error_codes = {
-        -32600: 'Invalid Request: Invalid commonJobParams.',
+        429: "Too many requests",
+        -32600: "Invalid Request: Invalid commonJobParams.",
         1042911: "Too many requests.",
         1042912: "Too many requests.",
         1156049: "Invalid Request",
@@ -121,7 +122,7 @@ class JSONRPCRequest:
             if request.status_code == 200:
                 return response["result"]
             else:
-                raise DeeplTranslateException(response["error"]["code"])
+                raise DeeplTranslateException(response["code"])
         except requests.exceptions.Timeout:
             raise DeeplTranslateException("Request timed out")
 
@@ -207,9 +208,8 @@ class DeeplTranslate(BaseTranslator):
             raise DeeplTranslateException(5010)
         return BaseTranslator.FormatedGlossary(csv, source_language, target_language)
 
-    def _translate(self, text: str, destination_language: str, source_language: str, formality: str = None,
-                   dictionary: BaseTranslator.FormatedGlossary = None, prev_paragraph: str = "", next_paragraph: str = "") -> str:
-        # check if glossary conbination are same as source and target language
+    def _translate(self, text: str, destination_language: str, source_language: str, formality: str = None, dictionary: BaseTranslator.FormatedGlossary = None, prev_paragraph: str = "", next_paragraph: str = "") -> str:
+        # check if glossary combination are same as source and target language
         formated_string = ""
         priority = 1
         quality = ""
