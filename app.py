@@ -920,15 +920,20 @@ def get_last_task_for_project(project_id):
 	last_task_id = redis_client.lindex(f"project:{project_id}:tasks", -1)
 
 	if not last_task_id:
-		return {"error": "Aucune tâche trouvée pour ce projet."}
+		return jsonify({"error": "Aucune tâche trouvée pour ce projet."}), 404
 
 	task = pre_translate_docx.AsyncResult(last_task_id.decode('utf-8'))
+
+	info = task.info
+	if isinstance(info, Exception):
+		info = {"error": str(info)}
+
 	response = {
 		"task_id": last_task_id.decode('utf-8'),
 		"state": task.state,
-		"info": task.info
+		"info": info
 	}
-	return response
+	return jsonify(response)
 
 
 @app.route('/download_file/<int:project_id>/<file_type>', methods=['GET'])
