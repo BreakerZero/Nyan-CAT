@@ -34,7 +34,7 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 
-RUN curl -L -o languagetool.zip https://languagetool.org/download/LanguageTool-stable.zip && \
+RUN curl -L -o languagetool.zip https://internal1.languagetool.org/snapshots/LanguageTool-latest-snapshot.zip && \
     unzip languagetool.zip -d /app/languagetool && \
     rm languagetool.zip
 
