@@ -45,7 +45,7 @@ redis_port = os.getenv('REDIS_PORT', '6379')
 
 LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
 LANGUAGETOOL_BASE_DIR = "languagetool"
-LANGUAGETOOL_VERSION = "LanguageTool-6.5"
+LANGUAGETOOL_VERSION = "LanguageTool-6.6"
 LANGUAGETOOL_PATH = os.path.join(LANGUAGETOOL_BASE_DIR, LANGUAGETOOL_VERSION)
 ADDED_FILES_DIR = os.path.join(LANGUAGETOOL_PATH, "org", "languagetool", "resource")
 PROXY_PATH = os.path.join('proxies.txt')
