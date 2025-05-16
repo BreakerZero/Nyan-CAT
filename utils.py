@@ -183,9 +183,9 @@ def update_added_txt_and_restart_lt(kill=True):
 				run(["taskkill", "/F", "/IM", "java.exe"], check=True)
 			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"),
 			       "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"],
-			      creationflags=subprocess.CREATE_NEW_CONSOLE)  # Détache le processus sur Windows
-	except Exception:
-		pass
+			      creationflags=subprocess.CREATE_NEW_CONSOLE)
+	except Exception as e:
+		logger.error(f"Erreur au lancement de LanguageTool : {e}", exc_info=True)
 
 
 def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary="", project_id=1):
