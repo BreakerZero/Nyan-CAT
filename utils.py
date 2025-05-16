@@ -1,3 +1,5 @@
+import docker
+
 from models import *
 
 
@@ -137,53 +139,48 @@ def Glos():  # fonction formatage glossaire
 
 
 def update_added_txt_and_restart_lt(kill=True):
-	# Récupération des mots dans la base de données
 	vocab_entries = Vocab.query.all()
 
-	# Organisation par langue pour les entrées de vocabulaire
 	vocab_by_lang = {}
 	for entry in vocab_entries:
 		lang = entry.Lang
 		if lang not in vocab_by_lang:
 			vocab_by_lang[lang] = []
 
-		# Format de l'entrée : mot;forme de base;catégorie genre nombre
 		Gender = entry.Gender or "e"  # Vide si non défini
 		Plural = "sp" if entry.Plural else "s"
 		vocab_line = f"{entry.Word};{entry.Word};{entry.Grammatical_Category} {Gender} {Plural}".strip()
 		vocab_by_lang[lang].append(vocab_line)
 
-	# Mise à jour des fichiers `added.txt` pour chaque langue
 	for lang, entries in vocab_by_lang.items():
 		added_txt_path = os.path.join(ADDED_FILES_DIR, lang, "added.txt")
 		backup_path = os.path.join(ADDED_FILES_DIR, lang, "added_backup.txt")
 
-		# Sauvegarder l'original `added.txt` si non déjà fait
 		if not os.path.exists(backup_path):
 			os.rename(added_txt_path, backup_path)
 
-		# Charger les données depuis le backup
 		with open(backup_path, "r") as backup_file:
 			original_content = backup_file.readlines()
 
-		# Écrire l'original + les entrées de la base dans `added.txt`
 		with open(added_txt_path, "w") as f:
-			f.writelines(original_content)  # Ajouter le contenu d'origine
+			f.writelines(original_content)
 			f.write("\n")
-			f.write("\n".join(entries))  # Ajouter les mots du vocab
+			f.write("\n".join(entries))
 
 	try:
 		if system == "Linux" or system == "Darwin":
-			if kill:
-				run(["pkill", "-f", "languagetool-server"])
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"),
-			       "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"])
+			try:
+				client = docker.from_env()
+				container = client.containers.get("languagetool")
+				container.restart()  # 🧼 clean restart
+				logger.info("Redémarrage de LanguageTool pour recharger les glossaires.")
+			except Exception as e:
+				logger.error(f"Impossible de redémarrer LanguageTool via Docker: {e}", exc_info=True)
 		elif system == "Windows":
-			if kill:
-				run(["taskkill", "/F", "/IM", "java.exe"], check=True)
-			Popen(["java", "-cp", os.path.join(LANGUAGETOOL_PATH, "languagetool-server.jar"),
-			       "org.languagetool.server.HTTPServer", "--port", "8081", "--allow-origin"],
-			      creationflags=subprocess.CREATE_NEW_CONSOLE)
+			client = docker.from_env()
+			container = client.containers.get("languagetool")
+			container.restart()
+			logger.info("Redémarrage de LanguageTool pour recharger les glossaires.")
 	except Exception as e:
 		logger.error(f"Erreur au lancement de LanguageTool : {e}", exc_info=True)
 

@@ -43,11 +43,11 @@ from celery.utils.log import get_task_logger
 redis_host = os.getenv('REDIS_HOST', 'localhost')
 redis_port = os.getenv('REDIS_PORT', '6379')
 
-LANGUAGETOOL_URL = "http://localhost:8081/v2/check"
-LANGUAGETOOL_BASE_DIR = "languagetool"
-LANGUAGETOOL_VERSION = "LanguageTool-6.7-SNAPSHOT"
-LANGUAGETOOL_PATH = os.path.join(LANGUAGETOOL_BASE_DIR, LANGUAGETOOL_VERSION)
-ADDED_FILES_DIR = os.path.join(LANGUAGETOOL_PATH, "org", "languagetool", "resource")
+languagetool_host = os.getenv('LANGUAGETOOL_HOST', 'localhost')
+languagetool_port = os.getenv('LANGUAGETOOL_PORT', '8010')
+
+LANGUAGETOOL_URL = f'http://{languagetool_host}:{languagetool_port}/v2/check'
+ADDED_FILES_DIR = os.path.join("lt-added")
 PROXY_PATH = os.path.join('proxies.txt')
 app = Flask("app")
 translator = TranslatorAPI('./translatemodel/')  # chemin vers les modèles
