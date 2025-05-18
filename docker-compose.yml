@@ -30,9 +30,7 @@ services:
     image: nyan-cat:latest
     container_name: "celery-worker-pretranslate"
     depends_on:
-      - nyancat
-      - redis
-      - languagetool
+      - celery-beat
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -65,9 +63,7 @@ services:
     image: nyan-cat:latest
     container_name: "celery-worker-proxy"
     depends_on:
-      - nyancat
-      - redis
-      - languagetool
+      - celery-worker-pretranslate
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
