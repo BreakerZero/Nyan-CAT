@@ -56,7 +56,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
-      - lt-added:/lt-added
+      - lt-added:/app/lt-added
     stop_grace_period: 20s
     stop_signal: SIGTERM
 
@@ -90,7 +90,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
-      - lt-added:/lt-added
+      - lt-added:/app/lt-added
     stop_grace_period: 20s
     stop_signal: SIGTERM
 
@@ -119,7 +119,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
-      - lt-added:/lt-added
+      - lt-added:/app/lt-added
     stop_grace_period: 20s
     stop_signal: SIGTERM
 
