@@ -25,22 +25,14 @@ services:
     depends_on:
       - redis
       - languagetool
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5000" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   celery-worker-pretranslate:
     image: nyan-cat:latest
     container_name: "celery-worker-pretranslate"
     depends_on:
-      nyancat:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      languagetool:
-        condition: service_healthy
+      - nyancat
+      - redis
+      - languagetool
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -73,12 +65,9 @@ services:
     image: nyan-cat:latest
     container_name: "celery-worker-proxy"
     depends_on:
-      nyancat:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      languagetool:
-        condition: service_healthy
+      - nyancat
+      - redis
+      - languagetool
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -111,12 +100,9 @@ services:
     image: nyan-cat:latest
     container_name: "celery-beat"
     depends_on:
-      nyancat:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      languagetool:
-        condition: service_healthy
+      - nyancat
+      - redis
+      - languagetool
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -157,11 +143,6 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   languagetool:
     image: erikvl87/languagetool:latest
