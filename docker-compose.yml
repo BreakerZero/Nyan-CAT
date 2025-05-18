@@ -112,8 +112,6 @@ services:
     command: >
       celery -A app.celery beat
       --loglevel=info
-      --without-mingle
-      --without-gossip
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
