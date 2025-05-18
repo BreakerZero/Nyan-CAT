@@ -45,6 +45,8 @@ COPY / /app
 
 RUN chmod +x /app/init_database.sh
 
+RUN apk add --no-cache bash
+
 EXPOSE 5000 8081
 
 ENV PYTHONPATH="/app"
