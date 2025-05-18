@@ -53,6 +53,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
+      - lt-added:/lt-added
 
   celery-worker-proxy:
     build: .
@@ -82,6 +83,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
+      - lt-added:/lt-added
 
   celery-beat:
     build: .
@@ -106,6 +108,7 @@ services:
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
+      - lt-added:/lt-added
 
   nginx:
     image: nginx:latest
