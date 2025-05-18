@@ -138,7 +138,7 @@ def Glos():  # fonction formatage glossaire
 		return formatedGlo[:-1]
 
 
-def update_added_txt_and_restart_lt(kill=True):
+def update_added_txt_and_restart_lt():
 	vocab_entries = Vocab.query.all()
 
 	vocab_by_lang = {}
@@ -168,21 +168,12 @@ def update_added_txt_and_restart_lt(kill=True):
 			f.write("\n".join(entries))
 
 	try:
-		if system == "Linux" or system == "Darwin":
-			try:
-				client = docker.from_env()
-				container = client.containers.get("languagetool")
-				container.restart()  # 🧼 clean restart
-				logger.info("Redémarrage de LanguageTool pour recharger les glossaires.")
-			except Exception as e:
-				logger.error(f"Impossible de redémarrer LanguageTool via Docker: {e}", exc_info=True)
-		elif system == "Windows":
-			client = docker.from_env()
-			container = client.containers.get("languagetool")
-			container.restart()
-			logger.info("Redémarrage de LanguageTool pour recharger les glossaires.")
+		print("Redémarrage de LanguageTool pour recharger les glossaires.")
+		client = docker.from_env()
+		container = client.containers.get("languagetool")
+		container.restart()  # 🧼 clean restart
 	except Exception as e:
-		logger.error(f"Erreur au lancement de LanguageTool : {e}", exc_info=True)
+		print(f"Erreur au lancement de LanguageTool : {e}")
 
 
 def translate_paragraph(index, para_text, proxies_queue, max_retries=float('inf'), prev_paragraph: str = "", next_paragraph: str = "", formatedGlossary="", project_id=1):

@@ -15,11 +15,7 @@ def load_user(user_id):
 
 with app.app_context():
 	formatedGlossary = Glos()
-	global server_started
-	if not server_started:
-		with start_lock:
-			update_added_txt_and_restart_lt(kill=False)
-			server_started = True
+	update_added_txt_and_restart_lt()
 
 
 @celery.task(queue='pretranslate', bind=True)
