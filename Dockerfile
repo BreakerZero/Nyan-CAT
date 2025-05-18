@@ -2,6 +2,8 @@ FROM python:3.12.10-alpine3.21
 
 LABEL maintainer="Breaker000"
 
+RUN apk add --no-cache bash
+
 RUN apk update && apk add --no-cache \
     coreutils \
     curl \
@@ -44,8 +46,6 @@ RUN pipx install --python python3 gunicorn \
 COPY / /app
 
 RUN chmod +x /app/init_database.sh
-
-RUN apk add --no-cache bash
 
 EXPOSE 5000 8081
 
