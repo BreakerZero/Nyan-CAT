@@ -48,6 +48,8 @@ services:
       --loglevel=info
       --concurrency=2
       --prefetch-multiplier=1
+      --without-mingle
+      --without-gossip
       -Q pretranslate
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
@@ -80,6 +82,8 @@ services:
       --loglevel=info
       --concurrency=1
       --prefetch-multiplier=1
+      -without-mingle
+      --without-gossip
       -Q proxyupdate
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
@@ -108,6 +112,8 @@ services:
     command: >
       celery -A app.celery beat
       --loglevel=info
+      -without-mingle
+      --without-gossip
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
