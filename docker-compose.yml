@@ -55,6 +55,8 @@ services:
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/lt-added
+    stop_grace_period: 20s
+    stop_signal: SIGTERM
 
   celery-worker-proxy:
     image: nyan-cat:latest
@@ -85,6 +87,8 @@ services:
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/lt-added
+    stop_grace_period: 20s
+    stop_signal: SIGTERM
 
   celery-beat:
     image: nyan-cat:latest
@@ -110,6 +114,8 @@ services:
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/lt-added
+    stop_grace_period: 20s
+    stop_signal: SIGTERM
 
   nginx:
     image: nginx:latest
