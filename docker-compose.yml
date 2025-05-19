@@ -24,13 +24,13 @@ services:
     tty: true
     depends_on:
       - redis
-      - languagetool
 
   celery-worker-pretranslate:
     image: nyan-cat:latest
     container_name: "celery-worker-pretranslate"
     depends_on:
-      - celery-beat
+      - nyancat
+      - redis
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -42,28 +42,24 @@ services:
       - LANGUAGETOOL_PORT=8010
       - CELERY_QUEUE=pretranslate
     command: >
-      bash -c "/app/wait-for-it.sh redis:6379 --timeout=30 && /app/wait-for-it.sh nyancat:5000 --timeout=30 &&
       celery -A app.celery worker
       --loglevel=info
       --concurrency=2
       --prefetch-multiplier=1
-      --without-mingle
-      --without-gossip
-      -Q pretranslate"
+      -Q pretranslate
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/app/lt-added
-    stop_grace_period: 20s
-    stop_signal: SIGTERM
 
   celery-worker-proxy:
     image: nyan-cat:latest
     container_name: "celery-worker-proxy"
     depends_on:
-      - celery-worker-pretranslate
+      - nyancat
+      - redis
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -75,30 +71,23 @@ services:
       - LANGUAGETOOL_PORT=8010
       - CELERY_QUEUE=proxyupdate
     command: >
-      bash -c "/app/wait-for-it.sh redis:6379 --timeout=30 && /app/wait-for-it.sh nyancat:5000 --timeout=30 &&
       celery -A app.celery worker
       --loglevel=info
       --concurrency=1
       --prefetch-multiplier=1
-      --without-mingle
-      --without-gossip
-      -Q proxyupdate"
+      -Q proxyupdate
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/app/lt-added
-    stop_grace_period: 20s
-    stop_signal: SIGTERM
 
   celery-beat:
     image: nyan-cat:latest
     container_name: "celery-beat"
     depends_on:
-      - nyancat
       - redis
-      - languagetool
     environment:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
@@ -109,17 +98,14 @@ services:
       - LANGUAGETOOL_HOST=languagetool
       - LANGUAGETOOL_PORT=8010
     command: >
-      bash -c "/app/wait-for-it.sh redis:6379 --timeout=30 && /app/wait-for-it.sh nyancat:5000 --timeout=30 &&
       celery -A app.celery beat
-      --loglevel=info"
+      --loglevel=info
     volumes:
       - /usr/builtin/etc/certificate:/app/ssl
       - /share/Docker/NyanCAT/fileproject:/app/fileproject
       - /share/Docker/NyanCAT/database:/app/database
       - /share/Docker/NyanCAT/proxies.txt:/app/proxies.txt
       - lt-added:/app/lt-added
-    stop_grace_period: 20s
-    stop_signal: SIGTERM
 
   nginx:
     image: nginx:latest
