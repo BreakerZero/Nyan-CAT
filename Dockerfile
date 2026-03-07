@@ -23,15 +23,11 @@ FROM python:3.13-alpine3.23
 
 WORKDIR /app
 
-RUN apk add --no-cache \
-    bash curl unzip git \
-    coreutils \
-    ffmpeg \
-    openjdk11-jre \
-    libgcc libstdc++ \
-    openblas \
-    libjpeg-turbo libpng tiff \
-    gstreamer libdc1394
+RUN apk add --no-cache bash curl unzip git
+RUN apk add --no-cache coreutils ffmpeg openjdk11-jre
+RUN apk add --no-cache libgcc libstdc++ openblas
+RUN apk add --no-cache libjpeg-turbo libpng tiff
+RUN apk add --no-cache gstreamer libdc1394
 
 RUN curl -L -o languagetool.zip https://internal1.languagetool.org/snapshots/LanguageTool-latest-snapshot.zip && \
     unzip languagetool.zip -d /app/languagetool && \
