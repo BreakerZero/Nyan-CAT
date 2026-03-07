@@ -4,14 +4,14 @@ FROM python:3.13-alpine3.23 AS builder
 LABEL maintainer="Breaker000"
 WORKDIR /app
 
-RUN set -eux; \
-    cat /etc/apk/repositories; \
-    apk update; \
-    apk add --no-cache bash curl unzip git; \
-    apk add --no-cache build-base python3-dev gfortran; \
-    apk add --no-cache lapack-dev blas-dev openblas-dev; \
-    apk add --no-cache libjpeg-turbo-dev libpng-dev tiff-dev; \
-    apk add --no-cache gstreamer-dev libdc1394-dev
+RUN cat /etc/apk/repositories
+RUN apk update
+
+RUN apk add --no-cache bash curl unzip git
+RUN apk add --no-cache build-base python3-dev gfortran
+RUN apk add --no-cache lapack-dev blas-dev openblas-dev
+RUN apk add --no-cache libjpeg-turbo-dev libpng-dev tiff-dev
+RUN apk add --no-cache gstreamer-dev libdc1394-dev
 
 RUN pip install --no-cache-dir uv
 
