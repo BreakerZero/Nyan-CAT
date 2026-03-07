@@ -1,56 +1,51 @@
-FROM python:3.12.10-alpine3.21
+# ---------- builder ----------
+FROM python:3.13-alpine3.23 AS builder
 
 LABEL maintainer="Breaker000"
+WORKDIR /app
 
-RUN apk add --no-cache bash
+RUN apk add --no-cache \
+    bash curl unzip git \
+    build-base python3-dev gfortran \
+    lapack-dev blas-dev openblas-dev \
+    libjpeg-turbo-dev libpng-dev tiff-dev \
+    gtk+3.0-dev gstreamer-dev libdc1394-dev
 
-RUN apk update && apk add --no-cache \
-    coreutils \
-    curl \
-    unzip \
-    python3 \
-    py3-pip \
-    py3-setuptools \
-    py3-distutils-extra \
-    openjdk11-jre \
-    bash \
-    git \
-    build-base \
-    python3-dev \
-    ffmpeg \
-    lapack-dev \
-    blas-dev \
-    libgcc \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    tiff-dev \
-    openblas-dev \
-    gfortran \
-    gtk+3.0-dev \
-    gstreamer-dev \
-    libdc1394-dev \
-    pipx \
-    && pipx ensurepath
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-dev --venv /opt/venv
+
+FROM python:3.12.10-alpine3.21
 
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
+RUN apk add --no-cache \
+    bash curl unzip \
+    coreutils \
+    ffmpeg \
+    openjdk11-jre \
+    libgcc libstdc++ \
+    openblas \
+    libjpeg-turbo libpng tiff \
+    gtk+3.0 gstreamer libdc1394
 
 RUN curl -L -o languagetool.zip https://internal1.languagetool.org/snapshots/LanguageTool-latest-snapshot.zip && \
     unzip languagetool.zip -d /app/languagetool && \
     rm languagetool.zip
 
-RUN pipx install --python python3 gunicorn \
-    && pipx inject gunicorn  -r requirements.txt
+COPY --from=builder /opt/venv /opt/venv
 
-COPY / /app
+COPY . /app
 
 RUN chmod +x /app/init_database.sh
 
-EXPOSE 5000 8081
-
+ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH="/app"
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 
-CMD /app/init_database.sh
+EXPOSE 5000 8081
+
+CMD ["/app/init_database.sh"]
