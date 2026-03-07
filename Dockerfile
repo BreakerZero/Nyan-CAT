@@ -23,6 +23,9 @@ FROM python:3.13-alpine3.23
 
 WORKDIR /app
 
+RUN cat /etc/apk/repositories
+RUN apk update
+
 RUN apk add --no-cache bash curl unzip git
 RUN apk add --no-cache coreutils ffmpeg openjdk11-jre-headless
 RUN apk add --no-cache libgcc libstdc++ openblas
