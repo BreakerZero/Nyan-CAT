@@ -24,7 +24,7 @@ FROM python:3.13-alpine3.23
 WORKDIR /app
 
 RUN apk add --no-cache bash curl unzip git
-RUN apk add --no-cache coreutils ffmpeg openjdk11-jre
+RUN apk add --no-cache coreutils ffmpeg openjdk11-jre-headless
 RUN apk add --no-cache libgcc libstdc++ openblas
 RUN apk add --no-cache libjpeg-turbo libpng tiff
 RUN apk add --no-cache gstreamer libdc1394
