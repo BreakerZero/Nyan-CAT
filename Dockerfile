@@ -9,7 +9,7 @@ RUN apk add --no-cache \
     build-base python3-dev gfortran \
     lapack-dev blas-dev openblas-dev \
     libjpeg-turbo-dev libpng-dev tiff-dev \
-    gtk+3.0-dev gstreamer-dev libdc1394-dev
+    gstreamer-dev libdc1394-dev
 
 RUN pip install --no-cache-dir uv
 
@@ -17,19 +17,19 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen --no-dev --venv /opt/venv
 
-FROM python:3.12.10-alpine3.21
+FROM python:3.13-alpine3.23
 
 WORKDIR /app
 
 RUN apk add --no-cache \
-    bash curl unzip \
+    bash curl unzip git \
     coreutils \
     ffmpeg \
     openjdk11-jre \
     libgcc libstdc++ \
     openblas \
     libjpeg-turbo libpng tiff \
-    gtk+3.0 gstreamer libdc1394
+    gstreamer libdc1394
 
 RUN curl -L -o languagetool.zip https://internal1.languagetool.org/snapshots/LanguageTool-latest-snapshot.zip && \
     unzip languagetool.zip -d /app/languagetool && \
