@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-dev --venv /opt/venv
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+RUN uv sync --frozen --no-dev
 
 # ---------- runtime ----------
 FROM python:3.13-slim-bookworm
