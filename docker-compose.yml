@@ -10,7 +10,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LANGUAGETOOL_HOST=languagetool
@@ -35,7 +35,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LANGUAGETOOL_HOST=languagetool
@@ -64,7 +64,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LANGUAGETOOL_HOST=languagetool
@@ -92,7 +92,7 @@ services:
       - PYTHONPATH=/app
       - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PATH=/root/.local/share/pipx/venvs/gunicorn/bin:$PATH
+      - PATH=/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LANGUAGETOOL_HOST=languagetool
