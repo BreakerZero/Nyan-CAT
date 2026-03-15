@@ -113,7 +113,7 @@ services:
       - "10000:80"
       - "10443:443"
     volumes:
-      - /volume1/Web/nginx.conf:/etc/nginx/nginx.conf
+      - /volume1/Docker/Nyan-CAT/nginx.conf:/etc/nginx/nginx.conf
       - /usr/builtin/etc/certificate:/etc/nginx/ssl
       - nginx-logs:/var/log/nginx
     depends_on:
