@@ -131,8 +131,8 @@ services:
     image: erikvl87/languagetool:latest
     container_name: languagetool
     environment:
-      - Java_Xms=512m
-      - Java_Xmx=1g
+      - Java_Xms=128m
+      - Java_Xmx=256m
     ports:
       - "8010:8010"
     volumes:
