@@ -41,7 +41,7 @@ from queue import Queue
 from celery.utils.log import get_task_logger
 
 redis_host = os.getenv('REDIS_HOST', 'localhost')
-redis_port = os.getenv('REDIS_PORT', '6379')
+redis_port = os.getenv('REDIS_PORT', '16379')
 
 languagetool_host = os.getenv('LANGUAGETOOL_HOST', 'localhost')
 languagetool_port = os.getenv('LANGUAGETOOL_PORT', '8010')
@@ -88,7 +88,7 @@ logger = get_task_logger(__name__)
 
 
 def wait_for_redis():
-	redis_client = redis.Redis(host=redis_host, port=6379)
+	redis_client = redis.Redis(host=redis_host, port=16379)
 	for _ in range(30):  # Attendre jusqu'à 30 secondes
 		try:
 			if redis_client.ping():
