@@ -110,8 +110,8 @@ services:
   nginx:
     image: nginx:latest
     ports:
-      - "9000:80"
-      - "9443:443"
+      - "10000:80"
+      - "10443:443"
     volumes:
       - /volume1/Web/nginx.conf:/etc/nginx/nginx.conf
       - /usr/builtin/etc/certificate:/etc/nginx/ssl
