@@ -1,17 +1,15 @@
 # ---------- builder ----------
-FROM python:3.13-alpine3.23 AS builder
+FROM python:3.13-slim-bookworm AS builder
 
 LABEL maintainer="Breaker000"
 WORKDIR /app
 
-RUN cat /etc/apk/repositories
-RUN apk update
-
-RUN apk add --no-cache bash curl unzip git
-RUN apk add --no-cache build-base python3-dev gfortran
-RUN apk add --no-cache lapack-dev blas-dev openblas-dev
-RUN apk add --no-cache libjpeg-turbo-dev libpng-dev tiff-dev
-RUN apk add --no-cache gstreamer-dev libdc1394-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash curl unzip git build-essential gfortran \
+    libopenblas-dev liblapack-dev \
+    libjpeg62-turbo-dev libpng-dev libtiff-dev \
+    ffmpeg openjdk-17-jre-headless \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
 
@@ -19,22 +17,15 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen --no-dev --venv /opt/venv
 
-FROM python:3.13-alpine3.23
+# ---------- runtime ----------
+FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
-RUN cat /etc/apk/repositories
-RUN apk update
-
-RUN apk add --no-cache bash curl unzip git
-RUN apk add --no-cache coreutils ffmpeg openjdk11-jre-headless
-RUN apk add --no-cache libgcc libstdc++ openblas
-RUN apk add --no-cache libjpeg-turbo libpng tiff
-RUN apk add --no-cache gstreamer libdc1394
-
-RUN curl -L -o languagetool.zip https://internal1.languagetool.org/snapshots/LanguageTool-latest-snapshot.zip && \
-    unzip languagetool.zip -d /app/languagetool && \
-    rm languagetool.zip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash curl unzip git coreutils ffmpeg openjdk-17-jre-headless \
+    libopenblas0 libjpeg62-turbo libpng16-16 libtiff6 \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
 

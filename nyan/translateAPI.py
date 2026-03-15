@@ -32,7 +32,6 @@ class TranslatorAPI:
 
 	def translate(self, provider="Nyan-CAT", settings="Less", apikey="", source="en", target="fr", formality=None, text="Hello", formatedGlossary="", prev_paragraph: str = "", next_paragraph: str = "", Context="", proxy=None):
 		if provider == "Nyan-CAT":  # fournisseur interne
-			print("here")
 			translator = pipeline('translation', model=self.model, tokenizer=self.tokenizer, src_lang="eng_Latn",  tgt_lang='fre_Latn')
 			result = translator(text)
 			return result[0]['translation_text']
